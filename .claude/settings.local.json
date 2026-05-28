@@ -26,7 +26,8 @@
       "Bash(curl -L -o \"C:\\\\Users\\\\Arellano\\\\ERA\\\\Coding\\\\bandapa-web\\\\stitch\\\\html\\\\landing-page-with-logo.html\" \"https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ7Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpaCiVodG1sXzAwMDY1MmUwZTExOTZmMDYwODE2ZGQwZWU0MDQwOWY5EgsSBxDp4Pu58gsYAZIBIwoKcHJvamVjdF9pZBIVQhM4NjAxNzk4MzAxMTY4NzE0Njg4&filename=&opi=89354086\")",
       "Bash(npx next *)",
       "Bash(Remove-Item -Recurse -Force .next -ErrorAction SilentlyContinue)",
-      "Bash(node *)"
+      "Bash(node *)",
+      "PowerShell(Get-ChildItem \"C:\\\\Users\\\\Arellano\\\\ERA\\\\Coding\\\\bandapa-web\" -Name | Where-Object { $_ -in @\\('public', 'static'\\) })"
     ]
   }
 }
