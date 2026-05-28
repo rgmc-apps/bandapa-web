@@ -17,14 +17,18 @@ export default async function AdminLayout({ children }: { children: React.ReactN
 
   // Use service role client to bypass RLS on admin_users
   const adminClient = createAdminClient();
-  const { data: adminRow } = await adminClient
+  const { data: adminRow, error: adminError } = await adminClient
     .from("admin_users")
     .select("user_id")
     .eq("user_id", user.id)
     .single();
 
+  if (adminError && adminError.code !== "PGRST116") {
+    console.error("[admin/layout] admin_users query failed:", adminError);
+  }
+
   if (!adminRow) {
-    redirect("/admin/login");
+    redirect("/login");
   }
 
   return (
