@@ -1,0 +1,392 @@
+<!DOCTYPE html><html lang="en" style=""><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>Bandapa Admin Dashboard</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&amp;family=Inter:wght@400;500;600&amp;family=JetBrains+Mono:wght@500&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "obsidian-deep": "#0F1509",
+                    "primary-fixed-dim": "#69de7f",
+                    "on-tertiary-fixed": "#1a1c1c",
+                    "on-secondary": "#ffffff",
+                    "inverse-surface": "#2f3131",
+                    "on-surface": "#1a1c1c",
+                    "secondary": "#5a6151",
+                    "surface-container-high": "#e8e8e8",
+                    "on-secondary-fixed": "#171d11",
+                    "surface-container-lowest": "#ffffff",
+                    "error-container": "#ffdad6",
+                    "on-surface-variant": "#3e4a3d",
+                    "on-primary-fixed-variant": "#005320",
+                    "on-error-container": "#93000a",
+                    "pure-white": "#FFFFFF",
+                    "tertiary-fixed-dim": "#c6c6c7",
+                    "surface-container": "#eeeeee",
+                    "primary-fixed": "#85fb99",
+                    "on-primary-fixed": "#002108",
+                    "on-primary": "#ffffff",
+                    "surface": "#f9f9f9",
+                    "background": "#f9f9f9",
+                    "on-primary-container": "#006428",
+                    "error": "#ba1a1a",
+                    "on-tertiary-fixed-variant": "#454747",
+                    "tertiary-fixed": "#e2e2e2",
+                    "primary-container": "#6ee384",
+                    "outline": "#6e7a6c",
+                    "surface-tint": "#006e2d",
+                    "on-error": "#ffffff",
+                    "surface-container-low": "#f3f3f4",
+                    "chlorophyll-green": "#6EE384",
+                    "outline-variant": "#bdcaba",
+                    "inverse-on-surface": "#f0f1f1",
+                    "tertiary": "#5d5f5f",
+                    "surface-bright": "#f9f9f9",
+                    "primary": "#006e2d",
+                    "on-tertiary": "#ffffff",
+                    "secondary-container": "#dbe2ce",
+                    "secondary-fixed-dim": "#c2c9b5",
+                    "on-tertiary-container": "#545656",
+                    "tertiary-container": "#cbcbcb",
+                    "on-secondary-container": "#5e6555",
+                    "on-secondary-fixed-variant": "#42493a",
+                    "surface-variant": "#e2e2e2",
+                    "inverse-primary": "#69de7f",
+                    "surface-container-highest": "#e2e2e2",
+                    "surface-mist": "#F0F0F0",
+                    "surface-dim": "#dadada",
+                    "secondary-fixed": "#dee5d1",
+                    "on-background": "#1a1c1c"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "margin-desktop": "64px",
+                    "base": "8px",
+                    "gutter": "24px",
+                    "container-max": "1280px",
+                    "margin-mobile": "16px",
+                    "margin-tablet": "32px"
+            },
+            "fontFamily": {
+                    "headline-md": ["Plus Jakarta Sans"],
+                    "label-md": ["JetBrains Mono"],
+                    "label-sm": ["JetBrains Mono"],
+                    "headline-lg-mobile": ["Plus Jakarta Sans"],
+                    "body-md": ["Inter"],
+                    "body-lg": ["Inter"],
+                    "headline-lg": ["Plus Jakarta Sans"],
+                    "body-sm": ["Inter"],
+                    "headline-xl": ["Plus Jakarta Sans"]
+            },
+            "fontSize": {
+                    "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                    "label-md": ["14px", {"lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "500"}],
+                    "label-sm": ["12px", {"lineHeight": "14px", "letterSpacing": "0.05em", "fontWeight": "500"}],
+                    "headline-lg-mobile": ["32px", {"lineHeight": "40px", "fontWeight": "700"}],
+                    "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                    "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "400"}],
+                    "headline-lg": ["40px", {"lineHeight": "48px", "letterSpacing": "-0.01em", "fontWeight": "700"}],
+                    "body-sm": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                    "headline-xl": ["64px", {"lineHeight": "72px", "letterSpacing": "-0.02em", "fontWeight": "700"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        body { font-family: 'Inter', sans-serif; }
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(240, 240, 240, 0.8);
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .sidebar-item-active {
+            color: #6EE384;
+            background: rgba(255, 255, 255, 0.1);
+        }
+    </style>
+</head>
+<body class="bg-background text-on-surface">
+<!-- SIDEBAR NAVIGATION -->
+<aside class="fixed left-0 top-0 h-full w-[280px] bg-obsidian-deep flex flex-col p-6 space-y-4 z-50">
+<div class="mb-8"><img src="https://lh3.googleusercontent.com/aida-public/AB6AXuBNjuJY-IlYCnp69GlNbog2lG6Q_FZKRqnUlXfwK9YQXjSHWt6WoCnhYoIPTvsXiKGaG3-WTDegN3h0oRJ7njRAnJcs0Wie00DbcP3jQP5cDHjuifxD3W_E3vPdFEt8r9JBXtuw4WmWQf_9152mtXK_hDicy0yA8oWWUSCZcU0NuTKN62TXL7YhIrj9N_hpHWRXFFwg2r4XcbwClLye5f4eIK3yi4J3Wwz8YOOWCP3J97-8hRo_g7CgICQ2XOPhkOdDiqCjcRSh5kI" alt="Bandapa Logo" class="mb-2 h-[48px] h-12">
+<p class="font-label-sm text-label-sm text-pure-white/50 tracking-wider">Management Portal</p></div>
+<nav class="flex-1 space-y-2">
+<!-- Overview (Active) -->
+<a class="flex items-center gap-3 px-4 py-3 text-chlorophyll-green bg-white/10 rounded-lg transition-transform scale-98 active:scale-95 font-label-md text-label-md" href="#">
+<span class="material-symbols-outlined" data-icon="dashboard">dashboard</span>
+<span class="">Overview</span>
+</a>
+<!-- Bands -->
+<a class="flex items-center gap-3 px-4 py-3 text-pure-white/70 hover:bg-white/5 hover:text-pure-white transition-all font-label-md text-label-md" href="#">
+<span class="material-symbols-outlined" data-icon="group">group</span>
+<span class="">Bands</span>
+</a>
+<!-- Artists -->
+<a class="flex items-center gap-3 px-4 py-3 text-pure-white/70 hover:bg-white/5 hover:text-pure-white transition-all font-label-md text-label-md" href="#">
+<span class="material-symbols-outlined" data-icon="person">person</span>
+<span class="">Artists</span>
+</a>
+<!-- Venues -->
+<a class="flex items-center gap-3 px-4 py-3 text-pure-white/70 hover:bg-white/5 hover:text-pure-white transition-all font-label-md text-label-md" href="#">
+<span class="material-symbols-outlined" data-icon="location_on">location_on</span>
+<span class="">Venues</span>
+</a>
+<!-- Announcements -->
+<a class="flex items-center gap-3 px-4 py-3 text-pure-white/70 hover:bg-white/5 hover:text-pure-white transition-all font-label-md text-label-md" href="#">
+<span class="material-symbols-outlined" data-icon="campaign">campaign</span>
+<span class="">Announcements</span>
+</a>
+</nav>
+<div class="pt-6 border-t border-white/10 space-y-2">
+<button class="w-full bg-chlorophyll-green text-obsidian-deep py-3 rounded-lg font-label-md text-label-md flex items-center justify-center gap-2 mb-4 hover:brightness-110 transition-all">
+<span class="material-symbols-outlined" data-icon="add">add</span>
+<span class="">New Announcement</span>
+</button>
+<a class="flex items-center gap-3 px-4 py-3 text-pure-white/70 hover:bg-white/5 hover:text-pure-white transition-all font-label-md text-label-md" href="#">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+<span class="">Settings</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-pure-white/70 hover:bg-white/5 hover:text-pure-white transition-all font-label-md text-label-md" href="#">
+<span class="material-symbols-outlined" data-icon="logout">logout</span>
+<span class="">Logout</span>
+</a>
+</div>
+</aside>
+<!-- MAIN CONTENT -->
+<main class="ml-[280px] min-h-screen p-margin-desktop">
+<!-- Header -->
+<header class="flex justify-between items-center mb-12">
+<div>
+<h2 class="font-headline-lg text-headline-lg text-obsidian-deep">Overview</h2>
+<p class="font-body-md text-body-md text-on-surface-variant">Welcome back, Administrator. Here's what's happening today.</p>
+</div>
+<div class="flex items-center gap-4">
+<div class="relative">
+<input class="bg-surface-mist border-none rounded-full px-6 py-2 w-64 text-body-sm focus:ring-2 focus:ring-chlorophyll-green transition-all" placeholder="Search platform..." type="text">
+</div>
+<div class="w-12 h-12 rounded-full overflow-hidden border-2 border-surface-mist">
+<img alt="Admin Avatar" class="w-full h-full object-cover" data-alt="A professional headshot of a creative administrator with a clean, minimalist aesthetic. The person is smiling warmly, set against a soft, high-key studio background with natural precision. The image uses a light-mode color palette with neutral tones and soft, ambient lighting to convey approachability and professional tech-sophistication." src="https://lh3.googleusercontent.com/aida-public/AB6AXuB2U8IsWAcaJHeOzSI4EwjLpcL0vJVGeazVa1fe76-MrNpRDLW5q67ekAT0w48N0d2ISL9-aX1Eakb-CNEP6WIEPnfsQi0WMQiHBL4jHyfE0iIRQzoBJG4PxW6YzWJboOncI3qnMnZ0hP9Vj0Hre-VVbcRLhnwmk1DNgEM6gslOageJbsxmv1WHQCKmv-KleX1PkMyHxc2aTOo4EKwLep-rFdihK-GTjxp3pvtPfo6lsaPbuhb4gi0m-TBJ9mQrFldSe7fIUvHIGX0">
+</div>
+</div>
+</header>
+<!-- BENTO GRID METRICS -->
+<section class="grid grid-cols-1 md:grid-cols-4 gap-gutter mb-12">
+<!-- Metric 1 -->
+<div class="bg-pure-white p-6 rounded-xl border border-surface-mist shadow-sm flex flex-col justify-between hover:border-chlorophyll-green transition-colors cursor-default">
+<div>
+<span class="material-symbols-outlined text-primary mb-4" data-icon="group">group</span>
+<p class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-widest">Active Users</p>
+</div>
+<div class="mt-4 flex items-baseline gap-2">
+<span class="font-headline-md text-headline-md">12,842</span>
+<span class="text-primary font-label-sm text-label-sm">+4.2%</span>
+</div>
+</div>
+<!-- Metric 2 -->
+<div class="bg-pure-white p-6 rounded-xl border border-surface-mist shadow-sm flex flex-col justify-between hover:border-chlorophyll-green transition-colors cursor-default">
+<div>
+<span class="material-symbols-outlined text-primary mb-4" data-icon="music_note">music_note</span>
+<p class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-widest">Total Bands</p>
+</div>
+<div class="mt-4 flex items-baseline gap-2">
+<span class="font-headline-md text-headline-md">1,450</span>
+<span class="text-primary font-label-sm text-label-sm">+12%</span>
+</div>
+</div>
+<!-- Metric 3 -->
+<div class="bg-pure-white p-6 rounded-xl border border-surface-mist shadow-sm flex flex-col justify-between hover:border-chlorophyll-green transition-colors cursor-default">
+<div>
+<span class="material-symbols-outlined text-primary mb-4" data-icon="stadium">stadium</span>
+<p class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-widest">Venues</p>
+</div>
+<div class="mt-4 flex items-baseline gap-2">
+<span class="font-headline-md text-headline-md">382</span>
+<span class="text-on-surface-variant font-label-sm text-label-sm">Steady</span>
+</div>
+</div>
+<!-- Metric 4 -->
+<div class="bg-primary-container p-6 rounded-xl shadow-sm flex flex-col justify-between">
+<div>
+<span class="material-symbols-outlined text-on-primary-container mb-4" data-icon="bolt">bolt</span>
+<p class="font-label-sm text-label-sm text-on-primary-container uppercase tracking-widest">Engagement</p>
+</div>
+<div class="mt-4 flex items-baseline gap-2">
+<span class="font-headline-md text-headline-md text-on-primary-container">89%</span>
+<span class="material-symbols-outlined text-on-primary-container" data-icon="trending_up">trending_up</span>
+</div>
+</div>
+</section>
+<!-- ASYMMETRIC CONTENT AREA -->
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-gutter">
+<!-- Recent Activity Feed -->
+<div class="lg:col-span-2 space-y-gutter">
+<div class="bg-pure-white rounded-xl border border-surface-mist p-base overflow-hidden">
+<div class="p-6 border-b border-surface-mist flex justify-between items-center">
+<h3 class="font-headline-md text-headline-md">Recent Activity</h3>
+<button class="text-primary font-label-md text-label-md hover:underline">View All</button>
+</div>
+<div class="divide-y divide-surface-mist">
+<!-- Activity Item 1 -->
+<div class="p-6 flex items-start gap-4 hover:bg-surface transition-colors">
+<div class="w-10 h-10 rounded-full bg-secondary-container flex items-center justify-center text-on-secondary-container">
+<span class="material-symbols-outlined" data-icon="verified_user">verified_user</span>
+</div>
+<div class="flex-1">
+<p class="font-body-md text-body-md"><span class="font-bold">The Midnight Echoes</span> was verified as a Professional Tier Band.</p>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-1">2 hours ago • New York City</p>
+</div>
+</div>
+<!-- Activity Item 2 -->
+<div class="p-6 flex items-start gap-4 hover:bg-surface transition-colors">
+<div class="w-10 h-10 rounded-full bg-error-container flex items-center justify-center text-on-error-container">
+<span class="material-symbols-outlined" data-icon="report">report</span>
+</div>
+<div class="flex-1">
+<p class="font-body-md text-body-md">Reported content at <span class="font-bold">Brooklyn Steel</span> venue was resolved.</p>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-1">4 hours ago • System Audit</p>
+</div>
+</div>
+<!-- Activity Item 3 -->
+<div class="p-6 flex items-start gap-4 hover:bg-surface transition-colors">
+<div class="w-10 h-10 rounded-full bg-primary-container flex items-center justify-center text-on-primary-container">
+<span class="material-symbols-outlined" data-icon="celebration">celebration</span>
+</div>
+<div class="flex-1">
+<p class="font-body-md text-body-md"><span class="font-bold">Summer Solstice Festival</span> announcement reached 10k users.</p>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-1">8 hours ago • Promotion</p>
+</div>
+</div>
+<!-- Activity Item 4 -->
+<div class="p-6 flex items-start gap-4 hover:bg-surface transition-colors">
+<div class="w-10 h-10 rounded-full bg-tertiary-container flex items-center justify-center text-on-tertiary-container">
+<span class="material-symbols-outlined" data-icon="person_add">person_add</span>
+</div>
+<div class="flex-1">
+<p class="font-body-md text-body-md"><span class="font-bold">Marcus Chen</span> joined as a Lead Developer for 'The Paradox'.</p>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-1">Yesterday • Artist Profile</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Side Cards / Stats Detail -->
+<div class="space-y-gutter">
+<!-- Trending Artists -->
+<div class="bg-obsidian-deep text-pure-white rounded-xl p-6 relative overflow-hidden">
+<div class="relative z-10">
+<h3 class="font-headline-md text-headline-md mb-4">Top Trending</h3>
+<ul class="space-y-4">
+<li class="flex items-center justify-between">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded-lg bg-white/20"></div>
+<span class="font-body-md text-body-md">Luna &amp; The Rays</span>
+</div>
+<span class="text-chlorophyll-green font-label-sm text-label-sm">82k plays</span>
+</li>
+<li class="flex items-center justify-between">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded-lg bg-white/20"></div>
+<span class="font-body-md text-body-md">Static Dreams</span>
+</div>
+<span class="text-chlorophyll-green font-label-sm text-label-sm">54k plays</span>
+</li>
+<li class="flex items-center justify-between">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded-lg bg-white/20"></div>
+<span class="font-body-md text-body-md">Electric Forest</span>
+</div>
+<span class="text-chlorophyll-green font-label-sm text-label-sm">49k plays</span>
+</li>
+</ul>
+</div>
+<div class="absolute -right-12 -bottom-12 w-48 h-48 bg-chlorophyll-green/20 rounded-full blur-3xl"></div>
+</div>
+<!-- System Health Card -->
+<div class="glass-panel rounded-xl p-6">
+<h3 class="font-headline-md text-headline-md mb-2">System Health</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant mb-4">All systems operational.</p>
+<div class="space-y-4">
+<div>
+<div class="flex justify-between text-label-sm font-label-sm mb-1">
+<span class="">Server Load</span>
+<span class="">24%</span>
+</div>
+<div class="w-full bg-surface-mist h-2 rounded-full overflow-hidden">
+<div class="bg-chlorophyll-green h-full" style="width: 24%"></div>
+</div>
+</div>
+<div>
+<div class="flex justify-between text-label-sm font-label-sm mb-1">
+<span class="">API Latency</span>
+<span class="">42ms</span>
+</div>
+<div class="w-full bg-surface-mist h-2 rounded-full overflow-hidden">
+<div class="bg-primary h-full" style="width: 15%"></div>
+</div>
+</div>
+</div>
+</div>
+<!-- CTA Card -->
+<div class="bg-surface-mist rounded-xl p-6 border-2 border-dashed border-outline-variant flex flex-col items-center text-center">
+<span class="material-symbols-outlined text-secondary text-4xl mb-2" data-icon="analytics">analytics</span>
+<h4 class="font-headline-md text-headline-md text-secondary">Advanced Insights</h4>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-2 mb-4">Generate custom reports for artist growth and revenue distribution.</p>
+<button class="w-full bg-white text-obsidian-deep border border-outline-variant py-2 rounded-lg font-label-md text-label-md hover:bg-surface-variant transition-colors">
+                        Generate Report
+                    </button>
+</div>
+</div>
+</div>
+</main>
+<!-- FOOTER (Administrative Context) -->
+<footer class="ml-[280px] bg-surface-container-lowest border-t border-surface-mist py-base px-margin-desktop">
+<div class="max-w-container-max mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
+<span class="font-label-md text-label-md text-obsidian-deep">© 2024 Bandapa. All rights reserved.</span>
+<div class="flex gap-margin-mobile">
+<a class="font-body-sm text-body-sm text-secondary hover:text-primary transition-opacity duration-200" href="#">Terms</a>
+<a class="font-body-sm text-body-sm text-secondary hover:text-primary transition-opacity duration-200" href="#">Privacy</a>
+<a class="font-body-sm text-body-sm text-secondary hover:text-primary transition-opacity duration-200" href="#">Contact</a>
+<a class="font-body-sm text-body-sm text-secondary hover:text-primary transition-opacity duration-200" href="#">Twitter</a>
+</div>
+</div>
+</footer>
+<script>
+        // Simple micro-interaction for metric cards
+        document.querySelectorAll('.bg-pure-white').forEach(card => {
+            card.addEventListener('mouseenter', () => {
+                card.style.transform = 'translateY(-4px)';
+                card.style.transition = 'transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1)';
+            });
+            card.addEventListener('mouseleave', () => {
+                card.style.transform = 'translateY(0)';
+            });
+        });
+
+        // Search bar focus effect
+        const searchInput = document.querySelector('input[type="text"]');
+        searchInput.addEventListener('focus', () => {
+            searchInput.parentElement.classList.add('scale-105');
+            searchInput.parentElement.style.transition = 'all 0.3s ease';
+        });
+        searchInput.addEventListener('blur', () => {
+            searchInput.parentElement.classList.remove('scale-105');
+        });
+    </script>
+
+
+</body></html>

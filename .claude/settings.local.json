@@ -1,0 +1,32 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(Get-ChildItem -Path \"C:\\\\Users\\\\Arellano\\\\ERA\\\\Coding\\\\bandapa\" -Force)",
+      "Bash(Select-Object Name, FullName)",
+      "Read(//c/Users/Arellano/ERA/Coding/bandapa/**)",
+      "Read(//mnt/c/Users/Arellano/ERA/Coding/**)",
+      "mcp__stitch__list_projects",
+      "mcp__supabase__list_tables",
+      "mcp__stitch__list_screens",
+      "mcp__supabase__get_publishable_keys",
+      "mcp__supabase__apply_migration",
+      "Bash(npm install *)",
+      "Bash(npm run *)",
+      "mcp__stitch__get_screen",
+      "Bash(curl -L -o \"C:\\\\Users\\\\Arellano\\\\ERA\\\\Coding\\\\bandapa-web\\\\stitch\\\\screenshots\\\\landing-download-page.png\" \"https://lh3.googleusercontent.com/aida/ADBb0uie-lrk8Y6QP-X0P0UY8kpswK_7bXyIoHB1L6XCIfURVCRX94ZDJnSzfMLRiuVr-OSthY9TO6Ynv36fMUmOiuRS5AOKzqlOIRP6Fe0_Xj_HaWSE3KDg24sco_NkqDtqYgVa4r3tlug_bl2pRlepG30c4gFygsOf7bXL66mfhYO_A-Q4neYgx_V2vl_48Qc8-kq5ec55GBfh6BgVrpyeR5MgEJH1KgHgQr2KrPWtYlhx92wcnPkZbPnH5LQ\")",
+      "Bash(curl -L -o \"C:\\\\Users\\\\Arellano\\\\ERA\\\\Coding\\\\bandapa-web\\\\stitch\\\\screenshots\\\\admin-overview-dashboard.png\" \"https://lh3.googleusercontent.com/aida/ADBb0ugwCzDdZShmLGcqH998w_SBadPniyGOPkbTdotl6EedOsJbAVyGnE0JT4u7lFnRPE-Yo8attGzBL-q5lRs1KZZ5ee0Cr44iGVEkF6B8SShbIbJmPfEqytr-Rt8dvo3qIGASECDAgs8xV111LUPQEDTotRPWwn7zTRttTvyge-UqfTOWCOX5g_WkP7J6DGX-4zrOoSpzygwpWtXASPYPqMfX5t9hH8dwDLMgz71HPiM_ranx9qok47Ky-g\")",
+      "Bash(curl -L -o \"C:\\\\Users\\\\Arellano\\\\ERA\\\\Coding\\\\bandapa-web\\\\stitch\\\\screenshots\\\\band-artist-management.png\" \"https://lh3.googleusercontent.com/aida/ADBb0ugYfLDvKvh1CPSBvxeCLO1XV8LRFo3NvW_xRF6Ozdf2JS7ItMXX41fiVb0JxEkPVXryNa1sG70UG6m5pHP7WtZxjxSzmiui7e3ilExl_dH6GMXTvFOt8zgwSyLBjfGklwk5on4iEpplvCvyj5FzzdvCCNcB_VKkxy9AbmYHTiZ0BbS2g6XltnohViKtm74VgM420josC8Ptgfk5FdlAP_Dry7tLS8vMHlSGnZYyIkHN7e3OmidzpKG7R6U\")",
+      "Bash(curl -L -o \"C:\\\\Users\\\\Arellano\\\\ERA\\\\Coding\\\\bandapa-web\\\\stitch\\\\screenshots\\\\broadcast-announcements.png\" \"https://lh3.googleusercontent.com/aida/ADBb0uipvTCNfhGa5d6qKuW0WRxOHqjBQjD39d4SC_peXKTjnZmQ4v0pEugN3sjAKlutjK8lLoJJNiCERSBvFKAKTyy3R1BX1UkVTuvis0oW2DZRRMm-il6AzZPoNck5Rf5O7Bv2TlheZxfyc75kHCD3PwViSFwAHVtmY8QEo8TIuxol6yLogzZX2lUgoHVa5-T7k91MTC-uIhjk9GVOWCIVeRmfsPRxpAN7Vkr9CKeE7iuKoIiD3mUXcrfrVw\")",
+      "Bash(curl -L -o \"C:\\\\Users\\\\Arellano\\\\ERA\\\\Coding\\\\bandapa-web\\\\stitch\\\\screenshots\\\\app-logo.png\" \"https://lh3.googleusercontent.com/aida/ADBb0ugZAez06Ip90mAwd2BfciwZP0iuX0zJNX-6nM3P88TBcsC1SnVK9mn_4tafp4fYMmWdrSmnXZmpSD5uQ1acxfi7S9erQn2vB7j-ne_kjShuh0EeCcqmcKhV8gIczAW3NkYpDMT4TkYTKCNcgNjPHyRd58rlxBr7-YDymAFwrNwGbpgTwRZSMM-RUuq0s9o6Gcehln5ma_ugorDjIuVaNH_ygjgPefgEo-dh1u0o2ejsaPwuHfkQDdudCkjv4LVk6WaAZuOQtYrnjw\")",
+      "Bash(curl -L -o \"C:\\\\Users\\\\Arellano\\\\ERA\\\\Coding\\\\bandapa-web\\\\stitch\\\\screenshots\\\\landing-page-with-logo.png\" \"https://lh3.googleusercontent.com/aida/ADBb0uggXt4TlVGRAzoT0l9_p3okTApmCCbC5QJBvEI8ylj24blx7zDq3LSbgVKKaP4M0F-tioOhT7GPeQ0hN3crB4_zCC-0kecpBmt6njYGCqSjPFfkSrqXIIkiIBCcT4ijyaIQdNq_SoDVJPyeusfvCmiP179nYKXPiRf_A8g8WzWfqmvEYVfO4tj8pk1Ivj0UKGNbdaUj1BvLYmqIFMRIcEyIWh7Cxm8vgJedgrRzQ2uWdL4KrUCTi9U2e_U\")",
+      "Bash(curl -L -o \"C:\\\\Users\\\\Arellano\\\\ERA\\\\Coding\\\\bandapa-web\\\\stitch\\\\html\\\\landing-download-page.html\" \"https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ7Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpaCiVodG1sX2M2MzFiNzBmN2M3YzQyMmE5MjljODA3OTRjZmYxNDljEgsSBxDp4Pu58gsYAZIBIwoKcHJvamVjdF9pZBIVQhM4NjAxNzk4MzAxMTY4NzE0Njg4&filename=&opi=89354086\")",
+      "Bash(curl -L -o \"C:\\\\Users\\\\Arellano\\\\ERA\\\\Coding\\\\bandapa-web\\\\stitch\\\\html\\\\admin-overview-dashboard.html\" \"https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ7Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpaCiVodG1sXzAwMDY1MmUwZTBjYWI3NzIwOTI1YzdiZTMyMDUzNDEzEgsSBxDp4Pu58gsYAZIBIwoKcHJvamVjdF9pZBIVQhM4NjAxNzk4MzAxMTY4NzE0Njg4&filename=&opi=89354086\")",
+      "Bash(curl -L -o \"C:\\\\Users\\\\Arellano\\\\ERA\\\\Coding\\\\bandapa-web\\\\stitch\\\\html\\\\band-artist-management.html\" \"https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ7Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpaCiVodG1sXzAwMDY1MmUwZTBmNDMxOTIwODE2ZDcyM2M0MWM3MGYwEgsSBxDp4Pu58gsYAZIBIwoKcHJvamVjdF9pZBIVQhM4NjAxNzk4MzAxMTY4NzE0Njg4&filename=&opi=89354086\")",
+      "Bash(curl -L -o \"C:\\\\Users\\\\Arellano\\\\ERA\\\\Coding\\\\bandapa-web\\\\stitch\\\\html\\\\broadcast-announcements.html\" \"https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ7Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpaCiVodG1sXzAwMDY1MmUwZTBiZjNlYjcwMzM4NWE2MDBlMTM0NjYxEgsSBxDp4Pu58gsYAZIBIwoKcHJvamVjdF9pZBIVQhM4NjAxNzk4MzAxMTY4NzE0Njg4&filename=&opi=89354086\")",
+      "Bash(curl -L -o \"C:\\\\Users\\\\Arellano\\\\ERA\\\\Coding\\\\bandapa-web\\\\stitch\\\\html\\\\landing-page-with-logo.html\" \"https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ7Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpaCiVodG1sXzAwMDY1MmUwZTExOTZmMDYwODE2ZGQwZWU0MDQwOWY5EgsSBxDp4Pu58gsYAZIBIwoKcHJvamVjdF9pZBIVQhM4NjAxNzk4MzAxMTY4NzE0Njg4&filename=&opi=89354086\")",
+      "Bash(npx next *)",
+      "Bash(Remove-Item -Recurse -Force .next -ErrorAction SilentlyContinue)",
+      "Bash(node *)"
+    ]
+  }
+}

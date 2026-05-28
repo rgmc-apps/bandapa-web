@@ -1,0 +1,330 @@
+<!DOCTYPE html><html class="light" lang="en"><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>Bandapa | The Pulse of Live Music</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700&amp;family=Inter:wght@400;500;600&amp;family=JetBrains+Mono:wght@500&amp;family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&amp;family=JetBrains+Mono:wght@100..900&amp;family=Plus+Jakarta+Sans:wght@100..900&amp;display=swap" rel="stylesheet">
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .glass-card {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+        }
+        .hero-gradient {
+            background: radial-gradient(circle at 70% 30%, rgba(110, 227, 132, 0.15) 0%, transparent 50%),
+                        radial-gradient(circle at 10% 80%, rgba(0, 110, 45, 0.05) 0%, transparent 40%);
+        }
+    </style>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "obsidian-deep": "#0F1509",
+                      "primary-fixed-dim": "#69de7f",
+                      "on-tertiary-fixed": "#1a1c1c",
+                      "on-secondary": "#ffffff",
+                      "inverse-surface": "#2f3131",
+                      "on-surface": "#1a1c1c",
+                      "secondary": "#5a6151",
+                      "surface-container-high": "#e8e8e8",
+                      "on-secondary-fixed": "#171d11",
+                      "surface-container-lowest": "#ffffff",
+                      "error-container": "#ffdad6",
+                      "on-surface-variant": "#3e4a3d",
+                      "on-primary-fixed-variant": "#005320",
+                      "on-error-container": "#93000a",
+                      "pure-white": "#FFFFFF",
+                      "tertiary-fixed-dim": "#c6c6c7",
+                      "surface-container": "#eeeeee",
+                      "primary-fixed": "#85fb99",
+                      "on-primary-fixed": "#002108",
+                      "on-primary": "#ffffff",
+                      "surface": "#f9f9f9",
+                      "background": "#f9f9f9",
+                      "on-primary-container": "#006428",
+                      "error": "#ba1a1a",
+                      "on-tertiary-fixed-variant": "#454747",
+                      "tertiary-fixed": "#e2e2e2",
+                      "primary-container": "#6ee384",
+                      "outline": "#6e7a6c",
+                      "surface-tint": "#006e2d",
+                      "on-error": "#ffffff",
+                      "surface-container-low": "#f3f3f4",
+                      "chlorophyll-green": "#6EE384",
+                      "outline-variant": "#bdcaba",
+                      "inverse-on-surface": "#f0f1f1",
+                      "tertiary": "#5d5f5f",
+                      "surface-bright": "#f9f9f9",
+                      "primary": "#006e2d",
+                      "on-tertiary": "#ffffff",
+                      "secondary-container": "#dbe2ce",
+                      "secondary-fixed-dim": "#c2c9b5",
+                      "on-tertiary-container": "#545656",
+                      "tertiary-container": "#cbcbcb",
+                      "on-secondary-container": "#5e6555",
+                      "on-secondary-fixed-variant": "#42493a",
+                      "surface-variant": "#e2e2e2",
+                      "inverse-primary": "#69de7f",
+                      "surface-container-highest": "#e2e2e2",
+                      "surface-mist": "#F0F0F0",
+                      "surface-dim": "#dadada",
+                      "secondary-fixed": "#dee5d1",
+                      "on-background": "#1a1c1c"
+              },
+              "borderRadius": {
+                      "DEFAULT": "0.25rem",
+                      "lg": "0.5rem",
+                      "xl": "0.75rem",
+                      "full": "9999px"
+              },
+              "spacing": {
+                      "margin-desktop": "64px",
+                      "base": "8px",
+                      "gutter": "24px",
+                      "container-max": "1280px",
+                      "margin-mobile": "16px",
+                      "margin-tablet": "32px"
+              },
+              "fontFamily": {
+                      "headline-md": ["Plus Jakarta Sans"],
+                      "label-md": ["JetBrains Mono"],
+                      "label-sm": ["JetBrains Mono"],
+                      "headline-lg-mobile": ["Plus Jakarta Sans"],
+                      "body-md": ["Inter"],
+                      "body-lg": ["Inter"],
+                      "headline-lg": ["Plus Jakarta Sans"],
+                      "body-sm": ["Inter"],
+                      "headline-xl": ["Plus Jakarta Sans"]
+              },
+              "fontSize": {
+                      "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                      "label-md": ["14px", {"lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "500"}],
+                      "label-sm": ["12px", {"lineHeight": "14px", "letterSpacing": "0.05em", "fontWeight": "500"}],
+                      "headline-lg-mobile": ["32px", {"lineHeight": "40px", "fontWeight": "700"}],
+                      "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                      "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "400"}],
+                      "headline-lg": ["40px", {"lineHeight": "48px", "letterSpacing": "-0.01em", "fontWeight": "700"}],
+                      "body-sm": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                      "headline-xl": ["64px", {"lineHeight": "72px", "letterSpacing": "-0.02em", "fontWeight": "700"}]
+              }
+            },
+          },
+        }
+      </script>
+</head>
+<body class="bg-pure-white text-on-surface font-body-md overflow-x-hidden">
+<!-- TopNavBar -->
+<nav class="fixed top-0 w-full z-50 bg-pure-white/80 dark:bg-obsidian-deep/80 backdrop-blur-md shadow-sm transition-all duration-300 ease-in-out">
+<div class="flex justify-between items-center h-16 px-4 md:px-margin-desktop max-w-container-max mx-auto">
+<div class="flex items-center gap-8">
+<a class="font-headline-md text-headline-md font-bold text-obsidian-deep dark:text-pure-white tracking-tight" href="#"><img alt="Bandapa Logo" class="w-auto object-contain h-10" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCH0DN3Msv3pQA8DF26YTHozogzbkVku5bmruCfrTW211_eZP_-ik30YAmm6wOZ-v8YgxENae9QPG16S7N60fNJKLgD0Ga9ZP1wOes1B76lxpNJWkSJbMv5DF8qtlFIY5_ZBiayOjuJdl-dQtYOoGz034zm14purfnZEHG-4MjdUea6lw6FT1ZW0zwHBN89bErjSbXNKkxzjZVSnTpdObqov6-VI32AaAZUs06QUirwcvnbZnY3tuQXkfqM9LHdxg2GdhAYBkF7pGg"></a>
+<div class="hidden md:flex gap-6 items-center">
+<a class="font-body-md text-body-md text-on-surface-variant hover:text-primary transition-colors" href="#">Product</a>
+<a class="font-body-md text-body-md text-primary border-b-2 border-primary" href="#download">Download</a>
+<a class="font-body-md text-body-md text-on-surface-variant hover:text-primary transition-colors" href="#">Guides</a>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<button class="hidden sm:block text-on-surface-variant font-label-md text-label-md hover:text-primary transition-colors">Sign In</button>
+<button class="bg-chlorophyll-green text-obsidian-deep px-6 py-2 rounded-full font-label-md text-label-md font-bold hover:opacity-90 transition-all active:scale-95 shadow-sm">Get Started</button>
+</div>
+</div>
+</nav>
+<main class="pt-16">
+<!-- Hero Section -->
+<section class="relative min-h-[90vh] flex items-center hero-gradient overflow-hidden">
+<div class="max-w-container-max mx-auto px-4 md:px-margin-desktop w-full grid md:grid-cols-2 gap-12 items-center transition-all duration-1000 opacity-100 translate-y-0">
+<div class="z-10 space-y-8 py-12">
+<div class="inline-flex items-center gap-2 px-3 py-1 bg-primary-container/20 text-primary rounded-full font-label-sm text-label-sm">
+<span class="w-2 h-2 rounded-full bg-primary animate-pulse"></span>
+                        LIVE IN 50+ CITIES
+                    </div>
+<h1 class="font-headline-xl text-[48px] md:text-headline-xl leading-tight">
+                        Welcome to <span class="text-primary italic">Bandapa</span>
+</h1>
+<p class="font-body-lg text-body-lg text-secondary max-w-lg">
+                        Connecting bands, venues, and fans through a high-precision digital ecosystem. Real-time scheduling, verified artist profiles, and seamless gig management.
+                    </p>
+<div class="flex flex-wrap gap-4 pt-4">
+<a class="px-8 py-4 bg-obsidian-deep text-pure-white rounded-xl font-headline-md text-headline-md hover:shadow-xl transition-all hover:-translate-y-1 active:scale-95 text-center" href="#auth">
+                            Confirm Signup
+                        </a>
+<a class="px-8 py-4 border-2 border-surface-mist text-on-surface rounded-xl font-headline-md text-headline-md hover:bg-surface-mist transition-all text-center" href="#download">
+                            Explore App
+                        </a>
+</div>
+</div>
+<div class="relative hidden md:block">
+<!-- Glassmorphic Visual Element -->
+<div class="absolute -top-20 -right-20 w-96 h-96 bg-chlorophyll-green/20 blur-[100px] rounded-full"></div>
+<div class="glass-card rounded-[2rem] p-8 border border-white/50 shadow-2xl transform rotate-3 hover:rotate-0 transition-transform duration-700">
+<img alt="Live Band Performance" class="rounded-xl w-full h-[500px] object-cover" data-alt="A high-energy photograph of a rock band performing live on a dark, moody stage. Intense beams of green and white light cut through the hazy atmosphere, illuminating the silhouette of the lead guitarist. The scene is shot with a professional cinematic lens, emphasizing deep contrast between the obsidian backgrounds and vibrant chlorophyll-green stage lighting. The mood is electric, immersive, and sophisticated, capturing the raw power of professional live music production." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCC3v-l8BUBMdiGiFP0gtueZQFQ0A6CEBLfUGBMCo6eztHNJQuBL0m25WVJZ_EdE8S9p4MPucndqS8_fCBmfXc1asRsgNO6rOmmJmKDcZEJ0kybI6m8XJdPIUMy2LnPgp_zBS-UurUv7AVWWVuuypS4BZdrX_9a5GlP50ZaEgY_MVpd-MA0VzCB8aiV0Kib0XaDQPe8A2-0LasZ__ZyeExPito3mhc6JIaASXEGqhz5KEFWuotoT95cgPBogWuqIR42lVa1ZIXjMQI">
+<div class="mt-6 flex justify-between items-center">
+<div>
+<p class="font-label-sm text-label-sm text-secondary uppercase tracking-widest">Now Touring</p>
+<p class="font-headline-md text-headline-md">The Obsidian Echoes</p>
+</div>
+<div class="flex -space-x-3">
+<div class="w-10 h-10 rounded-full border-2 border-white bg-surface-dim"></div>
+<div class="w-10 h-10 rounded-full border-2 border-white bg-primary"></div>
+<div class="w-10 h-10 rounded-full border-2 border-white bg-secondary"></div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Download Section -->
+<section class="py-24 bg-surface" id="download">
+<div class="max-w-container-max mx-auto px-4 md:px-margin-desktop transition-all duration-1000 opacity-100 translate-y-0 opacity-0 translate-y-10">
+<div class="text-center max-w-2xl mx-auto mb-16">
+<h2 class="font-headline-lg text-headline-lg mb-6">Take the stage everywhere</h2>
+<p class="font-body-md text-body-md text-secondary">The Bandapa mobile experience is optimized for professional management and real-time community engagement. Download the official app below.</p>
+</div>
+<div class="grid md:grid-cols-2 gap-8">
+<!-- APK Card -->
+<div class="bg-pure-white p-10 rounded-3xl border border-surface-mist shadow-sm hover:shadow-md transition-shadow">
+<div class="w-16 h-16 bg-primary-container/20 text-primary rounded-2xl flex items-center justify-center mb-8">
+<span class="material-symbols-outlined text-4xl" style="font-variation-settings: 'FILL' 1;">android</span>
+</div>
+<h3 class="font-headline-md text-headline-md mb-4">Download Bandapa</h3>
+<p class="font-body-md text-body-md text-secondary mb-8">Get the latest Android application package directly from our secure servers. Includes all beta features and core management tools.</p>
+<button class="w-full bg-chlorophyll-green text-obsidian-deep py-4 rounded-xl font-bold flex items-center justify-center gap-3 hover:opacity-90 transition-all group">
+                            Download Latest APK
+                            <span class="material-symbols-outlined group-hover:translate-y-1 transition-transform">download</span>
+</button>
+<p class="mt-4 text-center font-label-sm text-label-sm text-on-surface-variant">Version 2.4.1 (64MB) • Stable Build</p>
+</div>
+<!-- Guide Card -->
+<div class="bg-obsidian-deep p-10 rounded-3xl text-pure-white flex flex-col justify-between">
+<div>
+<div class="w-16 h-16 bg-white/10 text-chlorophyll-green rounded-2xl flex items-center justify-center mb-8">
+<span class="material-symbols-outlined text-4xl">menu_book</span>
+</div>
+<h3 class="font-headline-md text-headline-md mb-4">Direct Install Guide</h3>
+<ul class="space-y-4">
+<li class="flex gap-3 font-body-sm text-body-sm text-pure-white/70">
+<span class="text-chlorophyll-green font-bold">01.</span>
+                                    Enable "Install from Unknown Sources" in your device security settings.
+                                </li>
+<li class="flex gap-3 font-body-sm text-body-sm text-pure-white/70">
+<span class="text-chlorophyll-green font-bold">02.</span>
+                                    Download the APK file above using your mobile browser.
+                                </li>
+<li class="flex gap-3 font-body-sm text-body-sm text-pure-white/70">
+<span class="text-chlorophyll-green font-bold">03.</span>
+                                    Open the file and tap "Install" to begin the setup.
+                                </li>
+</ul>
+</div>
+<button class="mt-8 flex items-center gap-2 text-chlorophyll-green font-label-md text-label-md hover:gap-4 transition-all">
+                            VIEW DETAILED DOCUMENTATION <span class="material-symbols-outlined">arrow_forward</span>
+</button>
+</div>
+</div>
+</div>
+</section>
+<!-- Dynamic Bento Grid Section -->
+<section class="py-24 bg-pure-white">
+<div class="max-w-container-max mx-auto px-4 md:px-margin-desktop transition-all duration-1000 opacity-100 translate-y-0 opacity-0 translate-y-10">
+<div class="grid grid-cols-1 md:grid-cols-4 md:grid-rows-2 gap-6 h-auto md:h-[600px]">
+<div class="md:col-span-2 md:row-span-2 bg-surface-mist rounded-[2rem] p-10 flex flex-col justify-end relative overflow-hidden group">
+<img alt="Gig Management" class="absolute inset-0 w-full h-full object-cover opacity-20 group-hover:scale-105 transition-transform duration-700" data-alt="A top-down detailed shot of a modern music production workspace with a tablet, headphones, and a digital mixing console. The lighting is crisp and bright, following a professional office aesthetic with natural sunlight. The color palette is dominated by pure white surfaces and subtle grey tones, with high-quality tech gear that looks futuristic and sleek. The atmosphere is productive, clean, and technologically advanced, echoing the natural precision of the brand." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBVlW1DxlYHZNGprK5dVgK3HMhEeND0N4RSLrVHVTOBChS8H-DSMupe7vkuAGRFBPQhYNHmccJLJLNXGWx7eXy83_Z4tAV0ieFSzNbXjVoP_j3am9FE0-ddITRDqUKTvxjEfPfjAAY-RcRT_Brzfov-GKsBqIbWpsxkTtPQ58FsI0TmmsHZguMB7fqAb8qKnHzwdEP9yElij9gnAih93zmPEsSN97DY7fvxtASYbgLhwC_DQptYhLizUnkcoiTR6jVJ8diQRwLB6Sk">
+<div class="relative z-10">
+<h4 class="font-headline-lg text-headline-lg mb-4">Data-Driven Bookings</h4>
+<p class="font-body-md text-body-md text-secondary">Optimize your tour routes with advanced heatmaps and fan density analytics.</p>
+</div>
+</div>
+<div class="md:col-span-2 bg-secondary-container/30 rounded-[2rem] p-8 flex items-center justify-between border border-secondary-container/50">
+<div>
+<h4 class="font-headline-md text-headline-md">Secure Payments</h4>
+<p class="font-body-sm text-body-sm text-on-secondary-container">Automated escrow for venues and artists.</p>
+</div>
+<span class="material-symbols-outlined text-5xl text-primary">verified_user</span>
+</div>
+<div class="bg-primary-container rounded-[2rem] p-8 flex flex-col justify-center text-on-primary-container">
+<p class="font-headline-lg text-headline-lg">98%</p>
+<p class="font-label-sm text-label-sm uppercase tracking-wider">Artist Retention</p>
+</div>
+<div class="bg-obsidian-deep rounded-[2rem] p-8 flex flex-col justify-center text-pure-white">
+<p class="font-headline-lg text-headline-lg">2.4k</p>
+<p class="font-label-sm text-label-sm uppercase tracking-wider">Live Venues</p>
+</div>
+</div>
+</div>
+</section>
+</main>
+<!-- Footer -->
+<footer class="w-full bg-surface-container-lowest dark:bg-obsidian-deep border-t border-surface-mist dark:border-on-surface-variant transition-opacity duration-200">
+<div class="flex flex-col md:flex-row justify-between items-center py-8 px-4 md:px-margin-desktop max-w-container-max mx-auto">
+<div class="flex flex-col items-center md:items-start gap-2 mb-8 md:mb-0">
+<img alt="Bandapa Logo" class="h-10 w-auto object-contain mb-2" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCH0DN3Msv3pQA8DF26YTHozogzbkVku5bmruCfrTW211_eZP_-ik30YAmm6wOZ-v8YgxENae9QPG16S7N60fNJKLgD0Ga9ZP1wOes1B76lxpNJWkSJbMv5DF8qtlFIY5_ZBiayOjuJdl-dQtYOoGz034zm14purfnZEHG-4MjdUea6lw6FT1ZW0zwHBN89bErjSbXNKkxzjZVSnTpdObqov6-VI32AaAZUs06QUirwcvnbZnY3tuQXkfqM9LHdxg2GdhAYBkF7pGg">
+<p class="font-body-sm text-body-sm text-secondary dark:text-secondary-fixed-dim">© 2024 Bandapa. All rights reserved.</p>
+</div>
+<div class="flex flex-wrap justify-center gap-8">
+<a class="font-body-sm text-body-sm text-secondary dark:text-secondary-fixed-dim hover:text-primary transition-colors" href="#">Terms</a>
+<a class="font-body-sm text-body-sm text-secondary dark:text-secondary-fixed-dim hover:text-primary transition-colors" href="#">Privacy</a>
+<a class="font-body-sm text-body-sm text-secondary dark:text-secondary-fixed-dim hover:text-primary transition-colors" href="#">Contact</a>
+<a class="font-body-sm text-body-sm text-secondary dark:text-secondary-fixed-dim hover:text-primary transition-colors" href="#">Twitter</a>
+</div>
+<div class="mt-8 md:mt-0 flex gap-4">
+<div class="w-8 h-8 rounded-full bg-surface-mist flex items-center justify-center text-obsidian-deep hover:bg-primary hover:text-pure-white transition-all cursor-pointer">
+<span class="material-symbols-outlined text-sm">language</span>
+</div>
+<div class="w-8 h-8 rounded-full bg-surface-mist flex items-center justify-center text-obsidian-deep hover:bg-primary hover:text-pure-white transition-all cursor-pointer">
+<span class="material-symbols-outlined text-sm">share</span>
+</div>
+</div>
+</div>
+</footer>
+<script>
+        // Micro-interaction for the Download button
+        const downloadBtn = document.querySelector('#download button');
+        if (downloadBtn) {
+            downloadBtn.addEventListener('click', () => {
+                const originalText = downloadBtn.innerHTML;
+                downloadBtn.innerHTML = 'Preparing Download... <span class="material-symbols-outlined animate-spin">refresh</span>';
+                setTimeout(() => {
+                    downloadBtn.innerHTML = 'Download Started! <span class="material-symbols-outlined">check_circle</span>';
+                    downloadBtn.classList.replace('bg-chlorophyll-green', 'bg-primary');
+                    downloadBtn.classList.replace('text-obsidian-deep', 'text-pure-white');
+                    setTimeout(() => {
+                        downloadBtn.innerHTML = originalText;
+                        downloadBtn.classList.replace('bg-primary', 'bg-chlorophyll-green');
+                        downloadBtn.classList.replace('text-pure-white', 'text-obsidian-deep');
+                    }, 3000);
+                }, 1500);
+            });
+        }
+
+        // Scroll reveal logic
+        const observerOptions = {
+            threshold: 0.1
+        };
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('opacity-100', 'translate-y-0');
+                    entry.target.classList.remove('opacity-0', 'translate-y-10');
+                }
+            });
+        }, observerOptions);
+
+        document.querySelectorAll('section > div').forEach(el => {
+            el.classList.add('transition-all', 'duration-1000', 'opacity-0', 'translate-y-10');
+            observer.observe(el);
+        });
+    </script>
+
+
+
+
+</body></html>

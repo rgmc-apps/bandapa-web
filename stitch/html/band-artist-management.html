@@ -1,0 +1,464 @@
+<!DOCTYPE html><html class="light" lang="en" style=""><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>Bandapa | Admin Data Management</title>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<!-- Material Symbols -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<!-- Fonts -->
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=JetBrains+Mono:wght@500&amp;family=Plus+Jakarta+Sans:wght@600;700&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "obsidian-deep": "#0F1509",
+                        "primary-fixed-dim": "#69de7f",
+                        "on-tertiary-fixed": "#1a1c1c",
+                        "on-secondary": "#ffffff",
+                        "inverse-surface": "#2f3131",
+                        "on-surface": "#1a1c1c",
+                        "secondary": "#5a6151",
+                        "surface-container-high": "#e8e8e8",
+                        "on-secondary-fixed": "#171d11",
+                        "surface-container-lowest": "#ffffff",
+                        "error-container": "#ffdad6",
+                        "on-surface-variant": "#3e4a3d",
+                        "on-primary-fixed-variant": "#005320",
+                        "on-error-container": "#93000a",
+                        "pure-white": "#FFFFFF",
+                        "tertiary-fixed-dim": "#c6c6c7",
+                        "surface-container": "#eeeeee",
+                        "primary-fixed": "#85fb99",
+                        "on-primary-fixed": "#002108",
+                        "on-primary": "#ffffff",
+                        "surface": "#f9f9f9",
+                        "background": "#f9f9f9",
+                        "on-primary-container": "#006428",
+                        "error": "#ba1a1a",
+                        "on-tertiary-fixed-variant": "#454747",
+                        "tertiary-fixed": "#e2e2e2",
+                        "primary-container": "#6ee384",
+                        "outline": "#6e7a6c",
+                        "surface-tint": "#006e2d",
+                        "on-error": "#ffffff",
+                        "surface-container-low": "#f3f3f4",
+                        "chlorophyll-green": "#6EE384",
+                        "outline-variant": "#bdcaba",
+                        "inverse-on-surface": "#f0f1f1",
+                        "tertiary": "#5d5f5f",
+                        "surface-bright": "#f9f9f9",
+                        "primary": "#006e2d",
+                        "on-tertiary": "#ffffff",
+                        "secondary-container": "#dbe2ce",
+                        "secondary-fixed-dim": "#c2c9b5",
+                        "on-tertiary-container": "#545656",
+                        "tertiary-container": "#cbcbcb",
+                        "on-secondary-container": "#5e6555",
+                        "on-secondary-fixed-variant": "#42493a",
+                        "surface-variant": "#e2e2e2",
+                        "inverse-primary": "#69de7f",
+                        "surface-container-highest": "#e2e2e2",
+                        "surface-mist": "#F0F0F0",
+                        "surface-dim": "#dadada",
+                        "secondary-fixed": "#dee5d1",
+                        "on-background": "#1a1c1c"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "margin-desktop": "64px",
+                        "base": "8px",
+                        "gutter": "24px",
+                        "container-max": "1280px",
+                        "margin-mobile": "16px",
+                        "margin-tablet": "32px"
+                    },
+                    "fontFamily": {
+                        "headline-md": ["Plus Jakarta Sans"],
+                        "label-md": ["JetBrains Mono"],
+                        "label-sm": ["JetBrains Mono"],
+                        "headline-lg-mobile": ["Plus Jakarta Sans"],
+                        "body-md": ["Inter"],
+                        "body-lg": ["Inter"],
+                        "headline-lg": ["Plus Jakarta Sans"],
+                        "body-sm": ["Inter"],
+                        "headline-xl": ["Plus Jakarta Sans"]
+                    },
+                    "fontSize": {
+                        "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                        "label-md": ["14px", {"lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "500"}],
+                        "label-sm": ["12px", {"lineHeight": "14px", "letterSpacing": "0.05em", "fontWeight": "500"}],
+                        "headline-lg-mobile": ["32px", {"lineHeight": "40px", "fontWeight": "700"}],
+                        "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                        "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "400"}],
+                        "headline-lg": ["40px", {"lineHeight": "48px", "letterSpacing": "-0.01em", "fontWeight": "700"}],
+                        "body-sm": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                        "headline-xl": ["64px", {"lineHeight": "72px", "letterSpacing": "-0.02em", "fontWeight": "700"}]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .active-tab-indicator {
+            position: absolute;
+            left: 0;
+            width: 4px;
+            height: 24px;
+            background-color: #6EE384;
+            border-radius: 0 4px 4px 0;
+        }
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #bdcaba;
+            border-radius: 10px;
+        }
+    </style>
+</head>
+<body class="bg-surface text-on-surface font-body-md overflow-hidden">
+<div class="flex h-screen overflow-hidden">
+<!-- SideNavBar -->
+<aside class="fixed left-0 top-0 h-full w-[280px] bg-obsidian-deep flex flex-col p-6 space-y-4 z-50">
+<div class="mb-8 px-2"><img src="https://lh3.googleusercontent.com/aida-public/AB6AXuBNjuJY-IlYCnp69GlNbog2lG6Q_FZKRqnUlXfwK9YQXjSHWt6WoCnhYoIPTvsXiKGaG3-WTDegN3h0oRJ7njRAnJcs0Wie00DbcP3jQP5cDHjuifxD3W_E3vPdFEt8r9JBXtuw4WmWQf_9152mtXK_hDicy0yA8oWWUSCZcU0NuTKN62TXL7YhIrj9N_hpHWRXFFwg2r4XcbwClLye5f4eIK3yi4J3Wwz8YOOWCP3J97-8hRo_g7CgICQ2XOPhkOdDiqCjcRSh5kI" alt="Bandapa Logo" class="h-12 w-auto mb-1">
+<p class="font-label-sm text-label-sm text-pure-white/50">Management Portal</p></div>
+<nav class="flex-1 flex flex-col space-y-2">
+<a class="flex items-center space-x-3 px-4 py-3 text-pure-white/70 font-label-md text-label-md hover:bg-white/5 hover:text-pure-white transition-all rounded-lg" href="#">
+<span class="material-symbols-outlined" data-icon="dashboard">dashboard</span>
+<span class="">Overview</span>
+</a>
+<a class="flex items-center space-x-3 px-4 py-3 text-chlorophyll-green bg-white/10 font-label-md text-label-md rounded-lg transition-transform scale-98 active:scale-95" href="#">
+<span class="material-symbols-outlined" data-icon="group" style="font-variation-settings: 'FILL' 1;">group</span>
+<span class="">Bands</span>
+</a>
+<a class="flex items-center space-x-3 px-4 py-3 text-pure-white/70 font-label-md text-label-md hover:bg-white/5 hover:text-pure-white transition-all rounded-lg" href="#">
+<span class="material-symbols-outlined" data-icon="person">person</span>
+<span class="">Artists</span>
+</a>
+<a class="flex items-center space-x-3 px-4 py-3 text-pure-white/70 font-label-md text-label-md hover:bg-white/5 hover:text-pure-white transition-all rounded-lg" href="#">
+<span class="material-symbols-outlined" data-icon="location_on">location_on</span>
+<span class="">Venues</span>
+</a>
+<a class="flex items-center space-x-3 px-4 py-3 text-pure-white/70 font-label-md text-label-md hover:bg-white/5 hover:text-pure-white transition-all rounded-lg" href="#">
+<span class="material-symbols-outlined" data-icon="campaign">campaign</span>
+<span class="">Announcements</span>
+</a>
+</nav>
+<button class="w-full bg-chlorophyll-green text-obsidian-deep py-3 rounded-lg font-label-md text-label-md font-bold transition-all hover:brightness-110 active:scale-95 mb-6">
+                New Announcement
+            </button>
+<div class="pt-6 border-t border-white/10 space-y-2">
+<a class="flex items-center space-x-3 px-4 py-3 text-pure-white/70 font-label-md text-label-md hover:bg-white/5 hover:text-pure-white transition-all rounded-lg" href="#">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+<span class="">Settings</span>
+</a>
+<a class="flex items-center space-x-3 px-4 py-3 text-pure-white/70 font-label-md text-label-md hover:bg-white/5 hover:text-pure-white transition-all rounded-lg" href="#">
+<span class="material-symbols-outlined" data-icon="logout">logout</span>
+<span class="">Logout</span>
+</a>
+</div>
+</aside>
+<!-- Main Content Area -->
+<main class="flex-1 ml-[280px] overflow-y-auto custom-scrollbar bg-surface h-full">
+<!-- Header Section -->
+<header class="sticky top-0 z-40 bg-pure-white/80 backdrop-blur-md px-margin-desktop py-6 border-b border-surface-mist flex justify-between items-center">
+<div class="flex flex-col items-start">
+<img src="https://lh3.googleusercontent.com/aida-public/AB6AXuBNjuJY-IlYCnp69GlNbog2lG6Q_FZKRqnUlXfwK9YQXjSHWt6WoCnhYoIPTvsXiKGaG3-WTDegN3h0oRJ7njRAnJcs0Wie00DbcP3jQP5cDHjuifxD3W_E3vPdFEt8r9JBXtuw4WmWQf_9152mtXK_hDicy0yA8oWWUSCZcU0NuTKN62TXL7YhIrj9N_hpHWRXFFwg2r4XcbwClLye5f4eIK3yi4J3Wwz8YOOWCP3J97-8hRo_g7CgICQ2XOPhkOdDiqCjcRSh5kI" alt="Bandapa Logo" class="h-10 w-auto mb-2">
+<p class="font-body-sm text-body-sm text-on-surface-variant">Manage and organize the community band database</p>
+</div>
+<div class="flex items-center space-x-4 flex-col items-start">
+<div class="relative group flex flex-col items-start">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant" data-icon="search">search</span>
+<input class="pl-10 pr-4 py-2 bg-surface-mist border-none rounded-full w-64 text-body-sm focus:ring-2 focus:ring-chlorophyll-green transition-all outline-none" placeholder="Search by name, genre..." type="text">
+</div>
+<button class="flex items-center space-x-2 px-4 py-2 border border-outline-variant rounded-lg text-body-sm font-medium hover:bg-surface-mist transition-colors">
+<span class="material-symbols-outlined text-[20px]" data-icon="filter_list">filter_list</span>
+<span class="">Filter</span>
+</button>
+<button class="bg-obsidian-deep text-pure-white px-6 py-2 rounded-lg text-body-sm font-bold hover:opacity-90 transition-opacity">
+                        + Add Band
+                    </button>
+</div>
+</header>
+<!-- Secondary Tabs (Horizontal) -->
+<div class="px-margin-desktop py-4 flex space-x-8 border-b border-surface-mist">
+<button class="text-primary font-label-md text-label-md border-b-2 border-chlorophyll-green pb-2">Active Bands</button>
+<button class="text-on-surface-variant font-label-md text-label-md hover:text-primary transition-colors pb-2">Pending Review</button>
+<button class="text-on-surface-variant font-label-md text-label-md hover:text-primary transition-colors pb-2">Archived</button>
+<button class="text-on-surface-variant font-label-md text-label-md hover:text-primary transition-colors pb-2">Discovery Hub</button>
+</div>
+<!-- Content Container -->
+<div class="p-margin-desktop">
+<!-- Bento Overview Stats -->
+<div class="grid grid-cols-12 gap-gutter mb-margin-desktop">
+<div class="col-span-12 md:col-span-4 bg-pure-white border border-surface-mist rounded-xl p-6 shadow-sm">
+<div class="flex justify-between items-start mb-4">
+<span class="p-2 bg-chlorophyll-green/10 text-primary rounded-lg">
+<span class="material-symbols-outlined" data-icon="trending_up">trending_up</span>
+</span>
+<span class="text-label-sm font-label-sm text-primary">+12% this month</span>
+</div>
+<h4 class="text-on-surface-variant text-body-sm font-medium uppercase tracking-wider mb-1">Total Bands</h4>
+<p class="font-headline-md text-headline-md text-obsidian-deep">1,248</p>
+</div>
+<div class="col-span-12 md:col-span-4 bg-pure-white border border-surface-mist rounded-xl p-6 shadow-sm">
+<div class="flex justify-between items-start mb-4">
+<span class="p-2 bg-primary/10 text-primary rounded-lg">
+<span class="material-symbols-outlined" data-icon="event_note">event_note</span>
+</span>
+</div>
+<h4 class="text-on-surface-variant text-body-sm font-medium uppercase tracking-wider mb-1">Active Gigs</h4>
+<p class="font-headline-md text-headline-md text-obsidian-deep">432</p>
+</div>
+<div class="col-span-12 md:col-span-4 bg-pure-white border border-surface-mist rounded-xl p-6 shadow-sm">
+<div class="flex justify-between items-start mb-4">
+<span class="p-2 bg-secondary-container text-on-secondary-container rounded-lg">
+<span class="material-symbols-outlined" data-icon="star">star</span>
+</span>
+</div>
+<h4 class="text-on-surface-variant text-body-sm font-medium uppercase tracking-wider mb-1">Avg Rating</h4>
+<p class="font-headline-md text-headline-md text-obsidian-deep">4.8</p>
+</div>
+</div>
+<!-- Data Table -->
+<div class="bg-pure-white border border-surface-mist rounded-xl overflow-hidden shadow-sm">
+<table class="w-full text-left border-collapse">
+<thead>
+<tr class="bg-surface-mist/50 border-b border-surface-mist">
+<th class="px-6 py-4 font-label-md text-label-md text-on-surface-variant uppercase tracking-wider">Band Name</th>
+<th class="px-6 py-4 font-label-md text-label-md text-on-surface-variant uppercase tracking-wider">Genre</th>
+<th class="px-6 py-4 font-label-md text-label-md text-on-surface-variant uppercase tracking-wider">Members</th>
+<th class="px-6 py-4 font-label-md text-label-md text-on-surface-variant uppercase tracking-wider">Status</th>
+<th class="px-6 py-4 font-label-md text-label-md text-on-surface-variant uppercase tracking-wider">Join Date</th>
+<th class="px-6 py-4 font-label-md text-label-md text-on-surface-variant uppercase tracking-wider text-right">Actions</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-surface-mist">
+<!-- Row 1 -->
+<tr class="hover:bg-surface-mist/20 transition-colors group">
+<td class="px-6 py-4">
+<div class="flex items-center space-x-3">
+<div class="w-10 h-10 rounded-full bg-obsidian-deep flex items-center justify-center overflow-hidden">
+<img alt="Band" class="w-full h-full object-cover" data-alt="A professional studio portrait of a high-energy alternative rock band posing together in a moody, low-light setting with accents of chlorophyll green. The scene is crisp and high-contrast, featuring modern streetwear fashion and musical instruments. The atmosphere is professional and energetic, reflecting a cutting-edge music management aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCCNWwhEVN50jDmOj6eNinC0QDq5mX9Wifzs1oki4Li2DRVNHYcgP6Axv9hY98Edw1MzETFe9IA59gMla9B1eoqjfD-EMo5R4LcOdSfZCk0QR558NnSlIWQjh7PxD2crgAIFggpiFkqBtAiuJiqWiyB0BrRJsi61ECo82WX-qjYp9bf2EZjVi-Tn02Llp847GbkSI0G8999ZZPt_ul-SmznobWEbzMu6JaZAAR1Gr7SdxexXC1Fb4UZqZuplx_BehyGyuexKHeJ3Tc">
+</div>
+<div>
+<p class="font-body-md text-body-md font-semibold text-obsidian-deep">Neon Pulse</p>
+<p class="text-body-sm text-on-surface-variant">Berlin, DE</p>
+</div>
+</div>
+</td>
+<td class="px-6 py-4 font-body-sm text-body-sm text-on-surface-variant">Synthwave / Electro</td>
+<td class="px-6 py-4">
+<div class="flex -space-x-2">
+<div class="w-8 h-8 rounded-full border-2 border-pure-white bg-surface-dim"></div>
+<div class="w-8 h-8 rounded-full border-2 border-pure-white bg-surface-dim"></div>
+<div class="w-8 h-8 rounded-full border-2 border-pure-white bg-surface-mist flex items-center justify-center text-[10px] font-bold">+2</div>
+</div>
+</td>
+<td class="px-6 py-4">
+<span class="px-2 py-1 bg-primary/10 text-primary rounded font-label-sm text-[10px] font-bold uppercase tracking-wide">Verified</span>
+</td>
+<td class="px-6 py-4 font-body-sm text-body-sm text-on-surface-variant">Oct 12, 2023</td>
+<td class="px-6 py-4 text-right">
+<div class="flex justify-end space-x-2 opacity-0 group-hover:opacity-100 transition-opacity">
+<button class="p-2 hover:bg-surface-mist rounded-lg text-on-surface-variant transition-colors" title="Edit">
+<span class="material-symbols-outlined text-[18px]" data-icon="edit">edit</span>
+</button>
+<button class="p-2 hover:bg-error-container hover:text-on-error-container rounded-lg text-on-surface-variant transition-colors" title="Delete">
+<span class="material-symbols-outlined text-[18px]" data-icon="delete">delete</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- Row 2 -->
+<tr class="hover:bg-surface-mist/20 transition-colors group">
+<td class="px-6 py-4">
+<div class="flex items-center space-x-3">
+<div class="w-10 h-10 rounded-full bg-obsidian-deep flex items-center justify-center overflow-hidden">
+<img alt="Band" class="w-full h-full object-cover" data-alt="A cinematic black and white photo of an indie jazz ensemble performing live in a sun-drenched, airy studio space. The lighting is warm and organic, highlighting the textures of acoustic instruments. The composition is clean and minimalist, following the natural precision design language of Bandapa with sophisticated focus and depth." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAYQTHCK7Up3SUZUmpTVfrdp224252aZV9omjHtBxgLhA5wP_OK-jqTsbLxGkBm8o3adBKvAfwXCw9SRHj_K00kORaQckJDooLndwU-D8gC6tUTnTt_IbLS7RW4cBnIRZ8YZH7mUxytttPQ-qfLuoFbp2DijBksDZOBRvU0Oz3LfEj1oQad5juC-5e2HoCPwiiVEwZBHfrtrRJP-vorvPOreWCfYCboM7V-a867kvvKWOH5xkw2toMwtbFESy34vcdr18sX6VcwiXM">
+</div>
+<div>
+<p class="font-body-md text-body-md font-semibold text-obsidian-deep">Acoustic Drift</p>
+<p class="text-body-sm text-on-surface-variant">Austin, US</p>
+</div>
+</div>
+</td>
+<td class="px-6 py-4 font-body-sm text-body-sm text-on-surface-variant">Indie / Folk</td>
+<td class="px-6 py-4">
+<div class="flex -space-x-2">
+<div class="w-8 h-8 rounded-full border-2 border-pure-white bg-surface-dim"></div>
+<div class="w-8 h-8 rounded-full border-2 border-pure-white bg-surface-dim"></div>
+</div>
+</td>
+<td class="px-6 py-4">
+<span class="px-2 py-1 bg-secondary-container text-on-secondary-container rounded font-label-sm text-[10px] font-bold uppercase tracking-wide">Touring</span>
+</td>
+<td class="px-6 py-4 font-body-sm text-body-sm text-on-surface-variant">Jan 05, 2024</td>
+<td class="px-6 py-4 text-right">
+<div class="flex justify-end space-x-2 opacity-0 group-hover:opacity-100 transition-opacity">
+<button class="p-2 hover:bg-surface-mist rounded-lg text-on-surface-variant transition-colors">
+<span class="material-symbols-outlined text-[18px]" data-icon="edit">edit</span>
+</button>
+<button class="p-2 hover:bg-error-container hover:text-on-error-container rounded-lg text-on-surface-variant transition-colors">
+<span class="material-symbols-outlined text-[18px]" data-icon="delete">delete</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- Row 3 -->
+<tr class="hover:bg-surface-mist/20 transition-colors group">
+<td class="px-6 py-4">
+<div class="flex items-center space-x-3">
+<div class="w-10 h-10 rounded-full bg-obsidian-deep flex items-center justify-center overflow-hidden">
+<img alt="Band" class="w-full h-full object-cover" data-alt="Dynamic close-up shot of a modern metal band's lead singer against a backdrop of industrial textures and sharp green laser lights. The aesthetic is aggressive yet highly polished, using deep blacks and vibrant chlorophyll green to emphasize a high-tech metal identity. Professional architectural lighting enhances the dramatic mood." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCpH5IRAAZEH2b2dsmrpcDuhGdOJUXvzVOrLG3K6NbDrOKre7tmNxqXh_075P_p-66_re2PTLZBeK-0YYv2pfCSmpMe0S_A-DMZ-fYqEy4sAHHdE24LHTz1bUNQXvQMfd8UTC1w29BkfCN2-8nWL-FxZ3g1kzv4VEHf0pn_hjul_2XBqsW52pQ8xcDCiRfkyIu2d8kXQLO7hBKO9DkKtLorAgzFyL9iTS9Kz3pu5wBb5DvbP4r5xIXI0fGXqUFHfSy1QMnt1W6Dr6Q">
+</div>
+<div>
+<p class="font-body-md text-body-md font-semibold text-obsidian-deep">Chrome Echoes</p>
+<p class="text-body-sm text-on-surface-variant">London, UK</p>
+</div>
+</div>
+</td>
+<td class="px-6 py-4 font-body-sm text-body-sm text-on-surface-variant">Progressive Metal</td>
+<td class="px-6 py-4">
+<div class="flex -space-x-2">
+<div class="w-8 h-8 rounded-full border-2 border-pure-white bg-surface-dim"></div>
+<div class="w-8 h-8 rounded-full border-2 border-pure-white bg-surface-dim"></div>
+<div class="w-8 h-8 rounded-full border-2 border-pure-white bg-surface-dim"></div>
+<div class="w-8 h-8 rounded-full border-2 border-pure-white bg-surface-dim"></div>
+</div>
+</td>
+<td class="px-6 py-4">
+<span class="px-2 py-1 bg-surface-mist text-on-surface-variant rounded font-label-sm text-[10px] font-bold uppercase tracking-wide">Inactive</span>
+</td>
+<td class="px-6 py-4 font-body-sm text-body-sm text-on-surface-variant">Feb 20, 2024</td>
+<td class="px-6 py-4 text-right">
+<div class="flex justify-end space-x-2 opacity-0 group-hover:opacity-100 transition-opacity">
+<button class="p-2 hover:bg-surface-mist rounded-lg text-on-surface-variant transition-colors">
+<span class="material-symbols-outlined text-[18px]" data-icon="edit">edit</span>
+</button>
+<button class="p-2 hover:bg-error-container hover:text-on-error-container rounded-lg text-on-surface-variant transition-colors">
+<span class="material-symbols-outlined text-[18px]" data-icon="delete">delete</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- Row 4 -->
+<tr class="hover:bg-surface-mist/20 transition-colors group">
+<td class="px-6 py-4">
+<div class="flex items-center space-x-3">
+<div class="w-10 h-10 rounded-full bg-obsidian-deep flex items-center justify-center overflow-hidden">
+<img alt="Band" class="w-full h-full object-cover" data-alt="A vibrant, multi-layered digital illustration of a psychedelic pop band surrounded by organic floral patterns and neon accents. The color palette is dominated by obsidian deep and chlorophyll green with pops of coral. The lighting is ethereal and glowy, representing a modern, technology-sophisticated approach to music community engagement." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDCTOkkPcd_nbhYArnKx5lP99AOCxEGg2jq_EzaaH3S25eH0KpnYPbtWEacGIfrz5BCrkJVfmJaqQaR79LQ0mJcKghvA1ZRv-oJ5CG4skrlft65uU3kyTghmsdlONJRfqXGNU1RlKNQaBICJ9gGKcKh0ri9UHQ9CEhh550qofis9XwAu4qoBn8g58KfbV2OcXCT6-J2l0lPuKXPsaNnIYgAm_8cm4FSTH7-0XD14vUvyNfYdpNJ39QdgPvcySPoN2VTVXj6fXIuvTA">
+</div>
+<div>
+<p class="font-body-md text-body-md font-semibold text-obsidian-deep">Velvet Horizon</p>
+<p class="text-body-sm text-on-surface-variant">Melbourne, AU</p>
+</div>
+</div>
+</td>
+<td class="px-6 py-4 font-body-sm text-body-sm text-on-surface-variant">Psychedelic Pop</td>
+<td class="px-6 py-4">
+<div class="flex -space-x-2">
+<div class="w-8 h-8 rounded-full border-2 border-pure-white bg-surface-dim"></div>
+<div class="w-8 h-8 rounded-full border-2 border-pure-white bg-surface-dim"></div>
+<div class="w-8 h-8 rounded-full border-2 border-pure-white bg-surface-dim"></div>
+</div>
+</td>
+<td class="px-6 py-4">
+<span class="px-2 py-1 bg-primary/10 text-primary rounded font-label-sm text-[10px] font-bold uppercase tracking-wide">Verified</span>
+</td>
+<td class="px-6 py-4 font-body-sm text-body-sm text-on-surface-variant">Mar 15, 2024</td>
+<td class="px-6 py-4 text-right">
+<div class="flex justify-end space-x-2 opacity-0 group-hover:opacity-100 transition-opacity">
+<button class="p-2 hover:bg-surface-mist rounded-lg text-on-surface-variant transition-colors">
+<span class="material-symbols-outlined text-[18px]" data-icon="edit">edit</span>
+</button>
+<button class="p-2 hover:bg-error-container hover:text-on-error-container rounded-lg text-on-surface-variant transition-colors">
+<span class="material-symbols-outlined text-[18px]" data-icon="delete">delete</span>
+</button>
+</div>
+</td>
+</tr>
+</tbody>
+</table>
+<!-- Pagination -->
+<div class="px-6 py-4 bg-surface-mist/30 flex justify-between items-center border-t border-surface-mist">
+<span class="text-body-sm text-on-surface-variant">Showing 1 to 4 of 1,248 bands</span>
+<div class="flex space-x-2">
+<button class="p-2 border border-outline-variant rounded hover:bg-pure-white transition-colors disabled:opacity-50" disabled="">
+<span class="material-symbols-outlined text-[18px]" data-icon="chevron_left">chevron_left</span>
+</button>
+<button class="w-8 h-8 flex items-center justify-center bg-obsidian-deep text-pure-white rounded font-body-sm">1</button>
+<button class="w-8 h-8 flex items-center justify-center hover:bg-pure-white border border-transparent hover:border-outline-variant rounded font-body-sm">2</button>
+<button class="w-8 h-8 flex items-center justify-center hover:bg-pure-white border border-transparent hover:border-outline-variant rounded font-body-sm">3</button>
+<button class="p-2 border border-outline-variant rounded hover:bg-pure-white transition-colors">
+<span class="material-symbols-outlined text-[18px]" data-icon="chevron_right">chevron_right</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+<!-- Footer -->
+<footer class="w-full border-t border-surface-mist mt-margin-desktop">
+<div class="flex flex-col md:flex-row justify-between items-center py-base px-margin-desktop max-w-container-max mx-auto">
+<p class="font-body-sm text-body-sm text-secondary">© 2024 Bandapa. All rights reserved.</p>
+<div class="flex space-x-6 mt-4 md:mt-0">
+<a class="font-body-sm text-body-sm text-secondary hover:text-primary transition-opacity duration-200" href="#">Terms</a>
+<a class="font-body-sm text-body-sm text-secondary hover:text-primary transition-opacity duration-200" href="#">Privacy</a>
+<a class="font-body-sm text-body-sm text-secondary hover:text-primary transition-opacity duration-200" href="#">Contact</a>
+<a class="font-body-sm text-body-sm text-secondary hover:text-primary transition-opacity duration-200" href="#">Twitter</a>
+</div>
+</div>
+</footer>
+</main>
+</div>
+<!-- Active State & Micro-interactions Script -->
+<script>
+        // Simple search highlight simulation
+        const searchInput = document.querySelector('input[type="text"]');
+        searchInput.addEventListener('input', (e) => {
+            const query = e.target.value.toLowerCase();
+            const rows = document.querySelectorAll('tbody tr');
+            
+            rows.forEach(row => {
+                const text = row.textContent.toLowerCase();
+                if (text.includes(query)) {
+                    row.style.display = '';
+                    row.classList.add('bg-chlorophyll-green/5');
+                    setTimeout(() => row.classList.remove('bg-chlorophyll-green/5'), 1000);
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+        });
+
+        // Tab switching interaction
+        const tabs = document.querySelectorAll('.px-margin-desktop.py-4 button');
+        tabs.forEach(tab => {
+            tab.addEventListener('click', () => {
+                tabs.forEach(t => {
+                    t.classList.remove('text-primary', 'border-chlorophyll-green', 'border-b-2');
+                    t.classList.add('text-on-surface-variant');
+                });
+                tab.classList.add('text-primary', 'border-chlorophyll-green', 'border-b-2');
+                tab.classList.remove('text-on-surface-variant');
+            });
+        });
+    </script>
+
+
+</body></html>
