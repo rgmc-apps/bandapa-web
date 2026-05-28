@@ -141,8 +141,8 @@ export default function VenuesPage() {
                 </tr>
               </thead>
               <tbody>
-                {filtered.map((venue) => (
-                  <tr key={venue.id} className="hover:bg-surface-low/40 transition-colors">
+                {filtered.map((venue, i) => (
+                  <tr key={venue.id} className="hover:bg-surface-low/40 transition-colors spring-row" style={{ animationDelay: `${i * 28}ms` }}>
                     <td className="table-cell font-semibold text-obsidian">{venue.name}</td>
                     <td className="table-cell">
                       <span className={`inline-flex items-center gap-1 px-2.5 py-1 text-xs font-mono rounded-full ${venueTypeColors[venue.venue_type]}`}>

@@ -34,13 +34,15 @@ export async function middleware(request: NextRequest) {
   // Protect /admin routes (except /admin/login)
   if (pathname.startsWith("/admin") && pathname !== "/admin/login") {
     if (!user) {
-      return NextResponse.redirect(new URL("/admin/login", request.url));
+      return NextResponse.redirect(new URL("/login", request.url));
     }
   }
 
-  // Redirect authenticated users away from /admin/login
-  if (pathname === "/admin/login" && user) {
-    return NextResponse.redirect(new URL("/admin", request.url));
+  // Protect /home and /auth/redirect
+  if (pathname.startsWith("/home") || pathname === "/auth/redirect") {
+    if (!user) {
+      return NextResponse.redirect(new URL("/login", request.url));
+    }
   }
 
   return supabaseResponse;

@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
+import { createClient, createAdminClient } from "@/lib/supabase/server";
 import AdminSidebar from "@/components/AdminSidebar";
 
 export const metadata = {
@@ -15,8 +15,9 @@ export default async function AdminLayout({ children }: { children: React.ReactN
     redirect("/admin/login");
   }
 
-  // Verify admin status
-  const { data: adminRow } = await supabase
+  // Use service role client to bypass RLS on admin_users
+  const adminClient = createAdminClient();
+  const { data: adminRow } = await adminClient
     .from("admin_users")
     .select("user_id")
     .eq("user_id", user.id)

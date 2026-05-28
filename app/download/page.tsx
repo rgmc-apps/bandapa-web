@@ -2,6 +2,7 @@ import Image from "next/image";
 import LandingNav from "@/components/LandingNav";
 import ScrollReveal from "@/components/ScrollReveal";
 import DownloadButton from "@/components/DownloadButton";
+import ParticleNetwork from "@/components/ParticleNetwork";
 
 export const metadata = {
   title: "Bandapa | The Pulse of Live Music",
@@ -19,6 +20,9 @@ export default function DownloadPage() {
       <main className="pt-16">
         {/* ─── Hero ──────────────────────────────────────────────────── */}
         <section className="relative min-h-[100dvh] flex items-center hero-gradient overflow-hidden">
+          {/* Particle network — behind all content */}
+          <ParticleNetwork className="absolute inset-0 w-full h-full pointer-events-none" />
+
           {/* Ambient orbs */}
           <div
             className="absolute top-1/4 right-[15%] w-[480px] h-[480px] bg-chlorophyll-green/10 blur-[120px] rounded-full animate-float pointer-events-none"

@@ -132,8 +132,8 @@ export default function ArtistsPage() {
                 </tr>
               </thead>
               <tbody>
-                {filtered.map((artist) => (
-                  <tr key={artist.id} className="hover:bg-surface-low/40 transition-colors">
+                {filtered.map((artist, i) => (
+                  <tr key={artist.id} className="hover:bg-surface-low/40 transition-colors spring-row" style={{ animationDelay: `${i * 28}ms` }}>
                     <td className="table-cell font-semibold text-obsidian">{artist.name}</td>
                     <td className="table-cell">
                       <div className="flex flex-wrap gap-1">

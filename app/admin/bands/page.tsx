@@ -135,8 +135,8 @@ export default function BandsPage() {
                 </tr>
               </thead>
               <tbody>
-                {filtered.map((band) => (
-                  <tr key={band.id} className="hover:bg-surface-low/40 transition-colors">
+                {filtered.map((band, i) => (
+                  <tr key={band.id} className="hover:bg-surface-low/40 transition-colors spring-row" style={{ animationDelay: `${i * 28}ms` }}>
                     <td className="table-cell font-semibold text-obsidian">{band.name}</td>
                     <td className="table-cell">
                       <div className="flex flex-wrap gap-1">

@@ -168,8 +168,8 @@ export default function AlbumsPage() {
                 </tr>
               </thead>
               <tbody>
-                {filtered.map((album) => (
-                  <tr key={album.id} className="hover:bg-surface-low/40 transition-colors">
+                {filtered.map((album, i) => (
+                  <tr key={album.id} className="hover:bg-surface-low/40 transition-colors spring-row" style={{ animationDelay: `${i * 28}ms` }}>
                     <td className="table-cell font-semibold text-obsidian">{album.name}</td>
                     <td className="table-cell text-on-surface-variant">
                       {(album as Album & { bands?: { name: string } }).bands?.name ?? "—"}

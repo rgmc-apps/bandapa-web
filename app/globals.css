@@ -99,6 +99,44 @@
 .sidebar-scroll::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.12); }
 .sidebar-scroll::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.22); }
 
+/* ─── Spring Physics ────────────────────────────────────────── */
+
+/* Table / card row spring entry — stagger via inline animationDelay */
+@keyframes spring-row-in {
+  0%   { opacity: 0; transform: translateY(10px); }
+  62%  { opacity: 1; transform: translateY(-2.5px); }
+  80%  { transform: translateY(1px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+
+.spring-row {
+  animation: spring-row-in 360ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+/* Input spring-lift on focus */
+.spring-input {
+  transition:
+    transform 300ms cubic-bezier(0.34, 1.56, 0.64, 1),
+    box-shadow 300ms ease-out,
+    border-color 160ms ease,
+    background-color 160ms ease;
+}
+.spring-input:focus {
+  transform: translateY(-1.5px);
+}
+
+/* Button spring-release — fast press, spring return */
+.spring-btn {
+  transition:
+    transform 400ms cubic-bezier(0.34, 1.56, 0.64, 1),
+    background-color 150ms ease,
+    box-shadow 400ms ease-out;
+}
+.spring-btn:active {
+  transform: scale(0.955) !important;
+  transition: transform 65ms ease-in !important;
+}
+
 @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap');
 
 @layer base {

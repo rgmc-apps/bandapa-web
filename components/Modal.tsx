@@ -45,7 +45,10 @@ export default function Modal({ title, open, onClose, children }: ModalProps) {
   if (!mounted) return null;
 
   const dur = `${visible ? ENTER_DURATION : EXIT_DURATION}ms`;
-  const ease = "cubic-bezier(0.16, 1, 0.3, 1)";
+  // Spring easing for enter (overshoot), snappy ease-out for exit
+  const ease = visible
+    ? "cubic-bezier(0.34, 1.56, 0.64, 1)"
+    : "cubic-bezier(0.16, 1, 0.3, 1)";
 
   return (
     <div
@@ -63,7 +66,7 @@ export default function Modal({ title, open, onClose, children }: ModalProps) {
         className="bg-white rounded-2xl shadow-modal w-full max-w-lg max-h-[90vh] flex flex-col"
         style={{
           opacity: visible ? 1 : 0,
-          transform: visible ? "translateY(0) scale(1)" : "translateY(10px) scale(0.97)",
+          transform: visible ? "translateY(0) scale(1)" : "translateY(12px) scale(0.95)",
           transition: [
             `opacity ${dur} ${ease}`,
             `transform ${visible ? ENTER_DURATION : EXIT_DURATION - 20}ms ${ease}`,

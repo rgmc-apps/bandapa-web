@@ -65,7 +65,7 @@ export default function LandingNav({ apkUrl }: LandingNavProps) {
         {/* Actions */}
         <div className="flex items-center gap-4">
           <a
-            href="/admin/login"
+            href="/login"
             className="hidden sm:block text-on-surface-variant font-mono text-sm hover:text-primary transition-colors duration-200"
           >
             Sign In

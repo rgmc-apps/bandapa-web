@@ -114,8 +114,8 @@ export default function AnnouncementsPage() {
         </div>
       ) : (
         <div className="space-y-3">
-          {items.map((item) => (
-            <div key={item.id} className={`card p-5 ${!item.is_active ? "opacity-60" : ""}`}>
+          {items.map((item, i) => (
+            <div key={item.id} className={`card p-5 spring-row ${!item.is_active ? "opacity-60" : ""}`} style={{ animationDelay: `${i * 35}ms` }}>
               <div className="flex items-start gap-4">
                 {/* Active indicator */}
                 <button
