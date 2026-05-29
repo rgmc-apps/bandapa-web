@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 
 interface ModalProps {
   title: string;
@@ -50,7 +51,7 @@ export default function Modal({ title, open, onClose, children }: ModalProps) {
     ? "cubic-bezier(0.34, 1.56, 0.64, 1)"
     : "cubic-bezier(0.16, 1, 0.3, 1)";
 
-  return (
+  return createPortal(
     <div
       ref={overlayRef}
       className="fixed inset-0 z-50 flex items-center justify-center p-4 backdrop-blur-sm"
@@ -92,6 +93,7 @@ export default function Modal({ title, open, onClose, children }: ModalProps) {
           {children}
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

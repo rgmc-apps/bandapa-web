@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from "react";
 import { createClient } from "@/lib/supabase/client";
 import type { Venue } from "@/lib/types";
 import Modal from "@/components/Modal";
+import AddressAutocomplete from "@/components/AddressAutocomplete";
 
 type VenueForm = Omit<Venue, "id" | "created_at" | "added_by">;
 
@@ -39,6 +40,7 @@ export default function VenuesPage() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [modalOpen, setModalOpen] = useState(false);
+  const [modalKey, setModalKey] = useState(0);
   const [editing, setEditing] = useState<Venue | null>(null);
   const [form, setForm] = useState<VenueForm>(empty);
   const [saving, setSaving] = useState(false);
@@ -59,6 +61,7 @@ export default function VenuesPage() {
     setEditing(null);
     setForm(empty);
     setError("");
+    setModalKey((k) => k + 1);
     setModalOpen(true);
   }
 
@@ -73,6 +76,7 @@ export default function VenuesPage() {
       lng: venue.lng,
     });
     setError("");
+    setModalKey((k) => k + 1);
     setModalOpen(true);
   }
 
@@ -192,35 +196,18 @@ export default function VenuesPage() {
           </div>
           <div>
             <label className="label-field">Address *</label>
-            <input className="input-field" value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} placeholder="Full address" />
+            <AddressAutocomplete
+              key={modalKey}
+              address={form.address}
+              lat={form.lat}
+              lng={form.lng}
+              onPlaceSelect={(address, lat, lng) => setForm((f) => ({ ...f, address, lat, lng }))}
+              onAddressChange={(address) => setForm((f) => ({ ...f, address }))}
+            />
           </div>
           <div>
             <label className="label-field">Description</label>
             <textarea className="input-field min-h-[72px] resize-y" value={form.description ?? ""} onChange={(e) => setForm({ ...form, description: e.target.value })} placeholder="Optional notes…" />
-          </div>
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="label-field">Latitude</label>
-              <input
-                type="number"
-                step="0.000001"
-                className="input-field font-mono"
-                value={form.lat ?? ""}
-                onChange={(e) => setForm({ ...form, lat: e.target.value ? parseFloat(e.target.value) : null })}
-                placeholder="14.5995"
-              />
-            </div>
-            <div>
-              <label className="label-field">Longitude</label>
-              <input
-                type="number"
-                step="0.000001"
-                className="input-field font-mono"
-                value={form.lng ?? ""}
-                onChange={(e) => setForm({ ...form, lng: e.target.value ? parseFloat(e.target.value) : null })}
-                placeholder="120.9842"
-              />
-            </div>
           </div>
 
           {error && <p className="text-error text-sm">{error}</p>}
