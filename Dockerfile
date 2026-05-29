@@ -35,9 +35,6 @@ COPY --from=builder /app/public            ./public
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static    ./.next/static
 
-# Copy the static folder (app logo etc.)
-COPY --from=builder /app/static ./static
-
 USER nextjs
 
 # Cloud Run injects PORT (default 8080); Next.js standalone server respects it
