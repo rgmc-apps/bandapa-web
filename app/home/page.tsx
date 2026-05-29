@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
-import { createClient } from "@/lib/supabase/server";
+import { createClient, createAdminClient } from "@/lib/supabase/server";
 import SignOutButton from "@/components/SignOutButton";
 
 export const metadata = {
@@ -15,6 +15,14 @@ export default async function HomePage() {
   if (!user) {
     redirect("/login");
   }
+
+  const adminClient = createAdminClient();
+  const { data: adminRow } = await adminClient
+    .from("admin_users")
+    .select("user_id")
+    .eq("user_id", user.id)
+    .single();
+  const isAdmin = !!adminRow;
 
   const apkUrl = process.env.NEXT_PUBLIC_APK_DOWNLOAD_URL ?? "#";
   const displayName = user.email?.split("@")[0] ?? "there";
@@ -38,6 +46,20 @@ export default async function HomePage() {
           </Link>
 
           <div className="flex items-center gap-4">
+            {isAdmin && (
+              <Link
+                href="/admin"
+                className="hidden sm:flex items-center gap-1.5 text-sm font-mono text-primary hover:text-primary/80 transition-colors duration-200"
+              >
+                <span
+                  className="material-symbols-outlined"
+                  style={{ fontSize: "16px", fontVariationSettings: "'FILL' 1" }}
+                >
+                  admin_panel_settings
+                </span>
+                Admin Dashboard
+              </Link>
+            )}
             <span className="hidden sm:block font-mono text-xs text-secondary truncate max-w-[200px]">
               {user.email}
             </span>

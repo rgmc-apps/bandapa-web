@@ -5,9 +5,11 @@ import Image from "next/image";
 
 interface LandingNavProps {
   apkUrl: string;
+  user?: { email?: string } | null;
+  isAdmin?: boolean;
 }
 
-export default function LandingNav({ apkUrl }: LandingNavProps) {
+export default function LandingNav({ apkUrl, user, isAdmin }: LandingNavProps) {
   const [scrolled, setScrolled] = useState(false);
 
   useEffect(() => {
@@ -64,12 +66,43 @@ export default function LandingNav({ apkUrl }: LandingNavProps) {
 
         {/* Actions */}
         <div className="flex items-center gap-4">
-          <a
-            href="/login"
-            className="hidden sm:block text-on-surface-variant font-mono text-sm hover:text-primary transition-colors duration-200"
-          >
-            Sign In
-          </a>
+          {user ? (
+            <>
+              {isAdmin && (
+                <a
+                  href="/admin"
+                  className="hidden sm:flex items-center gap-1.5 text-sm font-mono text-primary hover:text-primary/80 transition-colors duration-200"
+                >
+                  <span
+                    className="material-symbols-outlined"
+                    style={{ fontSize: "16px", fontVariationSettings: "'FILL' 1" }}
+                  >
+                    admin_panel_settings
+                  </span>
+                  Admin Dashboard
+                </a>
+              )}
+              <a
+                href="/home"
+                className="hidden sm:flex items-center gap-1.5 text-on-surface-variant font-mono text-sm hover:text-primary transition-colors duration-200"
+              >
+                <span
+                  className="material-symbols-outlined"
+                  style={{ fontSize: "16px", fontVariationSettings: "'FILL' 1" }}
+                >
+                  account_circle
+                </span>
+                {user.email?.split("@")[0]}
+              </a>
+            </>
+          ) : (
+            <a
+              href="/login"
+              className="hidden sm:block text-on-surface-variant font-mono text-sm hover:text-primary transition-colors duration-200"
+            >
+              Sign In
+            </a>
+          )}
           <a
             href={apkUrl}
             download

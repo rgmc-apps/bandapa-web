@@ -1,13 +1,16 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { createClient } from "@/lib/supabase/client";
 import type { Announcement } from "@/lib/types";
 import Modal from "@/components/Modal";
+import Image from "next/image";
 
 type AnnouncementForm = { title: string; body: string; is_active: boolean };
 
 const empty: AnnouncementForm = { title: "", body: "", is_active: true };
+
+const BUCKET = "announcement-images";
 
 export default function AnnouncementsPage() {
   const [items, setItems] = useState<Announcement[]>([]);
@@ -15,8 +18,12 @@ export default function AnnouncementsPage() {
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<Announcement | null>(null);
   const [form, setForm] = useState<AnnouncementForm>(empty);
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [removeImage, setRemoveImage] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const supabase = createClient();
 
@@ -35,6 +42,9 @@ export default function AnnouncementsPage() {
   function openCreate() {
     setEditing(null);
     setForm(empty);
+    setImageFile(null);
+    setImagePreview(null);
+    setRemoveImage(false);
     setError("");
     setModalOpen(true);
   }
@@ -42,19 +52,73 @@ export default function AnnouncementsPage() {
   function openEdit(item: Announcement) {
     setEditing(item);
     setForm({ title: item.title, body: item.body, is_active: item.is_active });
+    setImageFile(null);
+    setImagePreview(item.image_url ?? null);
+    setRemoveImage(false);
     setError("");
     setModalOpen(true);
+  }
+
+  function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setImageFile(file);
+    setRemoveImage(false);
+    const reader = new FileReader();
+    reader.onload = (ev) => setImagePreview(ev.target?.result as string);
+    reader.readAsDataURL(file);
+  }
+
+  function handleRemoveImage() {
+    setImageFile(null);
+    setImagePreview(null);
+    setRemoveImage(true);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  }
+
+  async function uploadImage(file: File): Promise<string> {
+    const ext = file.name.split(".").pop();
+    const path = `${crypto.randomUUID()}.${ext}`;
+    const { error: uploadErr } = await supabase.storage
+      .from(BUCKET)
+      .upload(path, file, { upsert: false });
+    if (uploadErr) throw new Error(uploadErr.message);
+    const { data } = supabase.storage.from(BUCKET).getPublicUrl(path);
+    return data.publicUrl;
+  }
+
+  async function deleteImageByUrl(url: string) {
+    const path = url.split(`/${BUCKET}/`)[1];
+    if (path) await supabase.storage.from(BUCKET).remove([path]);
   }
 
   async function handleSave() {
     setSaving(true);
     setError("");
 
+    let imageUrl: string | null = editing?.image_url ?? null;
+
+    if (imageFile) {
+      // Delete old image if replacing
+      if (editing?.image_url) await deleteImageByUrl(editing.image_url);
+      try {
+        imageUrl = await uploadImage(imageFile);
+      } catch (e: unknown) {
+        setError(e instanceof Error ? e.message : "Image upload failed");
+        setSaving(false);
+        return;
+      }
+    } else if (removeImage) {
+      if (editing?.image_url) await deleteImageByUrl(editing.image_url);
+      imageUrl = null;
+    }
+
+    const payload = { ...form, image_url: imageUrl };
     let err;
     if (editing) {
-      ({ error: err } = await supabase.from("announcements").update(form).eq("id", editing.id));
+      ({ error: err } = await supabase.from("announcements").update(payload).eq("id", editing.id));
     } else {
-      ({ error: err } = await supabase.from("announcements").insert(form));
+      ({ error: err } = await supabase.from("announcements").insert(payload));
     }
 
     if (err) { setError(err.message); setSaving(false); return; }
@@ -63,9 +127,10 @@ export default function AnnouncementsPage() {
     setSaving(false);
   }
 
-  async function handleDelete(id: string) {
+  async function handleDelete(item: Announcement) {
     if (!confirm("Delete this announcement? Users will no longer see it.")) return;
-    await supabase.from("announcements").delete().eq("id", id);
+    if (item.image_url) await deleteImageByUrl(item.image_url);
+    await supabase.from("announcements").delete().eq("id", item.id);
     fetchItems();
   }
 
@@ -140,6 +205,19 @@ export default function AnnouncementsPage() {
                     </span>
                   </div>
                   <p className="text-sm text-on-surface-variant leading-relaxed line-clamp-3">{item.body}</p>
+
+                  {item.image_url && (
+                    <div className="mt-3 relative w-full max-w-sm h-40 rounded-xl overflow-hidden border border-surface-mist">
+                      <Image
+                        src={item.image_url}
+                        alt="Announcement image"
+                        fill
+                        className="object-cover"
+                        sizes="(max-width: 640px) 100vw, 384px"
+                      />
+                    </div>
+                  )}
+
                   <time className="text-xs font-mono text-on-surface-variant/60 mt-2 block">
                     {new Date(item.created_at).toLocaleDateString("en-US", {
                       year: "numeric", month: "short", day: "numeric",
@@ -152,7 +230,7 @@ export default function AnnouncementsPage() {
                   <button onClick={() => openEdit(item)} className="p-2 hover:bg-surface-mist rounded-lg text-on-surface-variant hover:text-primary transition-colors" title="Edit">
                     <span className="material-symbols-outlined" style={{ fontSize: "18px" }}>edit</span>
                   </button>
-                  <button onClick={() => handleDelete(item.id)} className="p-2 hover:bg-error-container hover:text-on-error-container rounded-lg text-on-surface-variant transition-colors" title="Delete">
+                  <button onClick={() => handleDelete(item)} className="p-2 hover:bg-error-container hover:text-on-error-container rounded-lg text-on-surface-variant transition-colors" title="Delete">
                     <span className="material-symbols-outlined" style={{ fontSize: "18px" }}>delete</span>
                   </button>
                 </div>
@@ -186,6 +264,60 @@ export default function AnnouncementsPage() {
               placeholder="Write your announcement here. This will be shown to all app users…"
             />
           </div>
+
+          {/* Image upload */}
+          <div>
+            <label className="label-field">Image (optional)</label>
+            {imagePreview ? (
+              <div className="relative mt-1.5 rounded-xl overflow-hidden border border-surface-mist bg-surface-mist group">
+                <div className="relative w-full h-44">
+                  <Image
+                    src={imagePreview}
+                    alt="Preview"
+                    fill
+                    className="object-cover"
+                    sizes="480px"
+                    unoptimized={imagePreview.startsWith("data:")}
+                  />
+                </div>
+                <div className="absolute inset-0 bg-obsidian-deep/0 group-hover:bg-obsidian-deep/40 transition-colors duration-200 flex items-center justify-center gap-3 opacity-0 group-hover:opacity-100">
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    className="flex items-center gap-1.5 px-3 py-1.5 bg-white/90 text-obsidian-deep rounded-lg text-xs font-mono font-semibold hover:bg-white transition-colors"
+                  >
+                    <span className="material-symbols-outlined" style={{ fontSize: "14px" }}>upload</span>
+                    Replace
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleRemoveImage}
+                    className="flex items-center gap-1.5 px-3 py-1.5 bg-error/90 text-white rounded-lg text-xs font-mono font-semibold hover:bg-error transition-colors"
+                  >
+                    <span className="material-symbols-outlined" style={{ fontSize: "14px" }}>delete</span>
+                    Remove
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                className="mt-1.5 w-full h-28 border-2 border-dashed border-outline-variant rounded-xl flex flex-col items-center justify-center gap-2 text-on-surface-variant hover:border-primary hover:text-primary hover:bg-primary/5 transition-all duration-200"
+              >
+                <span className="material-symbols-outlined" style={{ fontSize: "28px" }}>add_photo_alternate</span>
+                <span className="text-xs font-mono">Click to upload image</span>
+              </button>
+            )}
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={handleFileChange}
+            />
+          </div>
+
           <div className="flex items-center gap-3 p-3.5 bg-surface-mist rounded-lg">
             <button
               type="button"

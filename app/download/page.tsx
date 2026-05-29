@@ -3,6 +3,7 @@ import LandingNav from "@/components/LandingNav";
 import ScrollReveal from "@/components/ScrollReveal";
 import DownloadButton from "@/components/DownloadButton";
 import ParticleNetwork from "@/components/ParticleNetwork";
+import { createClient, createAdminClient } from "@/lib/supabase/server";
 
 export const metadata = {
   title: "Bandapa | The Pulse of Live Music",
@@ -10,12 +11,26 @@ export const metadata = {
     "Download the Bandapa app — connecting bands, venues, and fans through a high-precision digital ecosystem.",
 };
 
-export default function DownloadPage() {
+export default async function DownloadPage() {
   const apkUrl = process.env.NEXT_PUBLIC_APK_DOWNLOAD_URL ?? "#";
+
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  let isAdmin = false;
+  if (user) {
+    const adminClient = createAdminClient();
+    const { data } = await adminClient
+      .from("admin_users")
+      .select("user_id")
+      .eq("user_id", user.id)
+      .single();
+    isAdmin = !!data;
+  }
 
   return (
     <div className="bg-pure-white text-on-surface font-sans overflow-x-hidden">
-      <LandingNav apkUrl={apkUrl} />
+      <LandingNav apkUrl={apkUrl} user={user} isAdmin={isAdmin} />
 
       <main className="pt-16">
         {/* ─── Hero ──────────────────────────────────────────────────── */}
