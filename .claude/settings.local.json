@@ -27,7 +27,12 @@
       "Bash(npx next *)",
       "Bash(Remove-Item -Recurse -Force .next -ErrorAction SilentlyContinue)",
       "Bash(node *)",
-      "PowerShell(Get-ChildItem \"C:\\\\Users\\\\Arellano\\\\ERA\\\\Coding\\\\bandapa-web\" -Name | Where-Object { $_ -in @\\('public', 'static'\\) })"
+      "PowerShell(Get-ChildItem \"C:\\\\Users\\\\Arellano\\\\ERA\\\\Coding\\\\bandapa-web\" -Name | Where-Object { $_ -in @\\('public', 'static'\\) })",
+      "mcp__supabase__execute_sql",
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)",
+      "Bash(git push *)",
+      "Skill(update-config)"
     ]
   }
 }

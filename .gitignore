@@ -31,3 +31,4 @@ next-env.d.ts
 # Misc
 .cache/
 handoff.md
+.claude/
