@@ -26,5 +26,5 @@ export default async function AuthRedirectPage() {
     redirect("/admin");
   }
 
-  redirect("/home");
+  redirect("/dashboard");
 }

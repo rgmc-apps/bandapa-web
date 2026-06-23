@@ -83,7 +83,7 @@ export default function LandingNav({ apkUrl, user, isAdmin }: LandingNavProps) {
                 </a>
               )}
               <a
-                href="/home"
+                href="/dashboard"
                 className="hidden sm:flex items-center gap-1.5 text-on-surface-variant font-mono text-sm hover:text-primary transition-colors duration-200"
               >
                 <span

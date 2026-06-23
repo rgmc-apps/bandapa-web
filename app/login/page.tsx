@@ -20,7 +20,7 @@ function GoogleIcon() {
 
 export default function LoginPage() {
   const router = useRouter();
-  const [email, setEmail] = useState("");
+  const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
@@ -47,6 +47,20 @@ export default function LoginPage() {
     if (loading) return;
     setLoading(true);
     setError("");
+
+    let email = identifier.trim();
+    if (!email.includes("@")) {
+      const { data: resolvedEmail, error: rpcError } = await supabase
+        .schema("public")
+        .rpc("get_email_by_username", { uname: email.toLowerCase() });
+
+      if (rpcError || !resolvedEmail) {
+        setError("No account found with that username.");
+        setLoading(false);
+        return;
+      }
+      email = resolvedEmail as string;
+    }
 
     const { error: signInError } = await supabase.auth.signInWithPassword({ email, password });
 
@@ -99,14 +113,14 @@ export default function LoginPage() {
           <form onSubmit={handleSubmit} className="space-y-5">
             <div>
               <label className="block text-xs font-mono font-medium tracking-wider text-white/50 mb-2 uppercase">
-                Email
+                Email or Username
               </label>
               <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                type="text"
+                value={identifier}
+                onChange={(e) => setIdentifier(e.target.value)}
                 required
-                placeholder="you@example.com"
+                placeholder="you@example.com or username"
                 className="w-full bg-white/[0.08] border border-white/15 rounded-lg px-4 py-3 text-sm text-white placeholder-white/25 focus:outline-none focus:border-chlorophyll focus:ring-2 focus:ring-chlorophyll/20 transition-all spring-input"
               />
             </div>

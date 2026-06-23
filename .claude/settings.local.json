@@ -32,7 +32,9 @@
       "Bash(git add *)",
       "Bash(git commit -m ' *)",
       "Bash(git push *)",
-      "Skill(update-config)"
+      "Skill(update-config)",
+      "Bash(gcloud config *)",
+      "PowerShell(docker --version)"
     ]
   }
 }

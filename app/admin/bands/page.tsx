@@ -5,7 +5,7 @@ import { createClient } from "@/lib/supabase/client";
 import type { Band } from "@/lib/types";
 import Modal from "@/components/Modal";
 
-type BandForm = Omit<Band, "id" | "created_at" | "invite_code" | "created_by">;
+type BandForm = Omit<Band, "id" | "created_at" | "invite_code" | "created_by" | "image_url">;
 
 const empty: BandForm = {
   name: "",

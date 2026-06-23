@@ -19,6 +19,8 @@ function GoogleIcon() {
 
 export default function RegisterPage() {
   const [email, setEmail] = useState("");
+  const [username, setUsername] = useState("");
+  const [fullName, setFullName] = useState("");
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
   const [loading, setLoading] = useState(false);
@@ -53,6 +55,10 @@ export default function RegisterPage() {
       setError("Password must be at least 6 characters.");
       return;
     }
+    if (!/^[a-zA-Z0-9_]{3,20}$/.test(username)) {
+      setError("Username must be 3-20 characters: letters, numbers, underscores only.");
+      return;
+    }
 
     setLoading(true);
     setError("");
@@ -62,6 +68,10 @@ export default function RegisterPage() {
       password,
       options: {
         emailRedirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/auth/confirm`,
+        data: {
+          username: username.toLowerCase(),
+          full_name: fullName || null,
+        },
       },
     });
 
@@ -153,6 +163,33 @@ export default function RegisterPage() {
                 onChange={(e) => setEmail(e.target.value)}
                 required
                 placeholder="you@example.com"
+                className="w-full bg-white/[0.08] border border-white/15 rounded-lg px-4 py-3 text-sm text-white placeholder-white/25 focus:outline-none focus:border-chlorophyll focus:ring-2 focus:ring-chlorophyll/20 transition-all spring-input"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-mono font-medium tracking-wider text-white/50 mb-2 uppercase">
+                Username
+              </label>
+              <input
+                type="text"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                required
+                placeholder="bandname_official"
+                className="w-full bg-white/[0.08] border border-white/15 rounded-lg px-4 py-3 text-sm text-white placeholder-white/25 focus:outline-none focus:border-chlorophyll focus:ring-2 focus:ring-chlorophyll/20 transition-all spring-input"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-mono font-medium tracking-wider text-white/50 mb-2 uppercase">
+                Display Name
+              </label>
+              <input
+                type="text"
+                value={fullName}
+                onChange={(e) => setFullName(e.target.value)}
+                placeholder="Jane Dela Cruz"
                 className="w-full bg-white/[0.08] border border-white/15 rounded-lg px-4 py-3 text-sm text-white placeholder-white/25 focus:outline-none focus:border-chlorophyll focus:ring-2 focus:ring-chlorophyll/20 transition-all spring-input"
               />
             </div>

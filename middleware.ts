@@ -38,8 +38,12 @@ export async function middleware(request: NextRequest) {
     }
   }
 
-  // Protect /home and /auth/redirect
-  if (pathname.startsWith("/home") || pathname === "/auth/redirect") {
+  // Protect /home, /dashboard, and /auth/redirect
+  if (
+    pathname.startsWith("/home") ||
+    pathname.startsWith("/dashboard") ||
+    pathname === "/auth/redirect"
+  ) {
     if (!user) {
       return NextResponse.redirect(new URL("/login", request.url));
     }

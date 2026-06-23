@@ -9,6 +9,7 @@ export interface Band {
   invite_code: string;
   created_by: string | null;
   created_at: string;
+  image_url: string | null;
 }
 
 export interface Artist {
@@ -66,4 +67,60 @@ export interface Announcement {
 export interface AdminUser {
   user_id: string;
   created_at: string;
+}
+
+export interface Profile {
+  id: string;
+  username: string;
+  full_name: string | null;
+  first_name: string | null;
+  last_name: string | null;
+  contact_number: string | null;
+  display_picture: string | null;
+  instruments: string[];
+  created_at: string;
+}
+
+export interface BandMember {
+  id: string;
+  band_id: string;
+  user_id: string;
+  is_admin: boolean;
+  joined_at: string;
+}
+
+export type EventType = "personal" | "band_rehearsal" | "studio_recording" | "hangout";
+
+export interface Event {
+  id: string;
+  title: string;
+  event_type: EventType;
+  owner_id: string;
+  band_id: string | null;
+  venue_id: string | null;
+  start_time: string;
+  end_time: string;
+  is_all_day: boolean;
+  is_recurring: boolean;
+  recurrence_rule: string | null;
+  description: string | null;
+  location: string | null;
+  created_at: string;
+}
+
+export interface Conflict {
+  id: string;
+  band_event_id: string;
+  personal_event_id: string;
+  reported_by: string;
+  status: "pending" | "cancelled" | "greenlit";
+  created_at: string;
+}
+
+export interface ConflictVote {
+  id: string;
+  conflict_id: string;
+  user_id: string;
+  vote: "cancel" | "greenlit";
+  voted_at: string;
 }
