@@ -50,25 +50,26 @@ export default function BandsPage() {
     setMembers([]);
     setMembersOpen(true);
     setMembersLoading(true);
-    const { data } = await supabase
-      .from("band_members")
-      .select("*, user:users(*)")
-      .eq("band_id", band.id)
-      .order("joined_at", { ascending: true });
-    setMembers((data ?? []) as unknown as MemberRow[]);
+    const res = await fetch(`/api/admin/band-members?band_id=${band.id}`);
+    const json = await res.json();
+    setMembers(json.members ?? []);
     setMembersLoading(false);
   }
 
   async function handleRemoveMember(member: MemberRow) {
     if (!confirm(`Remove ${member.user.full_name || member.user.username} from ${membersBand?.name}?`)) return;
-    await supabase.from("band_members").delete().eq("id", member.id);
+    await fetch(`/api/admin/band-members?member_id=${member.id}`, { method: "DELETE" });
     setMembers(prev => prev.filter(m => m.id !== member.id));
   }
 
   async function handleToggleAdmin(member: MemberRow) {
     const action = member.is_admin ? "Remove admin from" : "Make admin";
     if (!confirm(`${action} ${member.user.full_name || member.user.username}?`)) return;
-    await supabase.from("band_members").update({ is_admin: !member.is_admin }).eq("id", member.id);
+    await fetch("/api/admin/band-members", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ member_id: member.id, is_admin: !member.is_admin }),
+    });
     setMembers(prev => prev.map(m => m.id === member.id ? { ...m, is_admin: !m.is_admin } : m));
   }
 
