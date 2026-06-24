@@ -18,6 +18,7 @@ export default function BandDetailPage() {
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [copied, setCopied] = useState(false);
+  const [copiedLink, setCopiedLink] = useState(false);
 
   const [editOpen, setEditOpen] = useState(false);
   const [editForm, setEditForm] = useState({ name: "", description: "", label: "", spotify_artist_id: "", date_formed: "" });
@@ -95,11 +96,30 @@ export default function BandDetailPage() {
     router.push("/dashboard/bands");
   }
 
+  async function handleToggleAdmin(member: MemberRow) {
+    const action = member.is_admin ? "Remove admin from" : "Make admin";
+    if (!confirm(`${action} ${member.user.full_name || member.user.username}?`)) return;
+    await supabase.from("band_members").update({ is_admin: !member.is_admin }).eq("id", member.id);
+    fetchData();
+  }
+
   function copyInviteCode() {
     if (!band) return;
     navigator.clipboard.writeText(band.invite_code);
     setCopied(true);
     setTimeout(() => setCopied(false), 1500);
+  }
+
+  function copyInviteLink() {
+    if (!band) return;
+    const link = `${window.location.origin}/dashboard/bands/join?code=${band.invite_code}`;
+    if (navigator.share) {
+      navigator.share({ title: `Join ${band.name} on Bandapa`, url: link });
+    } else {
+      navigator.clipboard.writeText(link);
+      setCopiedLink(true);
+      setTimeout(() => setCopiedLink(false), 1500);
+    }
   }
 
   if (loading || !band) {
@@ -145,11 +165,19 @@ export default function BandDetailPage() {
             <p className="text-obsidian">{band.label || "—"}</p>
           </div>
           <div className="col-span-2">
-            <p className="label-field">Invite code</p>
-            <button onClick={copyInviteCode} className="flex items-center gap-1.5 font-mono text-chlorophyll-dark hover:underline">
-              {band.invite_code}
-              <span className="material-symbols-outlined" style={{ fontSize: "14px" }}>{copied ? "check" : "content_copy"}</span>
-            </button>
+            <p className="label-field">Invite</p>
+            <div className="flex items-center gap-3 flex-wrap">
+              <button onClick={copyInviteCode} className="flex items-center gap-1.5 font-mono text-chlorophyll-dark hover:underline">
+                {band.invite_code}
+                <span className="material-symbols-outlined" style={{ fontSize: "14px" }}>{copied ? "check" : "content_copy"}</span>
+              </button>
+              {isAdmin && (
+                <button onClick={copyInviteLink} className="flex items-center gap-1.5 text-xs text-primary hover:underline">
+                  <span className="material-symbols-outlined" style={{ fontSize: "14px" }}>share</span>
+                  {copiedLink ? "Link copied!" : "Share link"}
+                </button>
+              )}
+            </div>
           </div>
         </div>
       </div>
@@ -176,6 +204,17 @@ export default function BandDetailPage() {
               <div className="flex items-center gap-2">
                 {m.is_admin && (
                   <span className="text-xs font-mono px-2 py-0.5 rounded-full bg-primary-container/30 text-primary">Admin</span>
+                )}
+                {isAdmin && m.user_id !== currentUserId && m.user_id !== band.created_by && (
+                  <button
+                    onClick={() => handleToggleAdmin(m)}
+                    className="p-1.5 hover:bg-surface-mist rounded-lg text-on-surface-variant hover:text-primary transition-colors"
+                    title={m.is_admin ? "Remove admin" : "Make admin"}
+                  >
+                    <span className="material-symbols-outlined" style={{ fontSize: "16px" }}>
+                      {m.is_admin ? "shield_with_heart" : "shield_person"}
+                    </span>
+                  </button>
                 )}
                 {isAdmin && !m.is_admin && m.user_id !== currentUserId && (
                   <button onClick={() => handleRemoveMember(m)} className="p-1.5 hover:bg-error-container hover:text-on-error-container rounded-lg text-on-surface-variant transition-colors" title="Remove">
