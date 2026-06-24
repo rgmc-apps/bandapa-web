@@ -48,7 +48,23 @@
       "Bash(npx tsc *)",
       "Bash(node_modules\\\\.bin\\\\tsc --noEmit)",
       "Bash(./node_modules/.bin/tsc --noEmit)",
-      "mcp__ide__getDiagnostics"
+      "mcp__ide__getDiagnostics",
+      "PowerShell([System.Environment]::GetEnvironmentVariables\\('User'\\).GetEnumerator\\(\\) | Where-Object { $_.Key -match 'API|KEY|TOKEN|ANTHROPIC|OPENAI|FAL|REPLICATE|TOGETHER' } | Select-Object Key, @{N='Value';E={$_.Value.Substring\\(0,[Math]::Min\\(20,$_.Value.Length\\)\\) + '...'}})",
+      "PowerShell([System.Environment]::GetEnvironmentVariables\\('Machine'\\).GetEnumerator\\(\\) | Where-Object { $_.Key -match 'API|KEY|TOKEN|ANTHROPIC|OPENAI|FAL|REPLICATE|TOGETHER' } | Select-Object Key, @{N='Value';E={$_.Value.Substring\\(0,[Math]::Min\\(20,$_.Value.Length\\)\\) + '...'}})",
+      "PowerShell(Get-Command *)",
+      "mcp__ide__executeCode",
+      "Bash(python3 -c \"from PIL import Image; print\\('PIL available'\\)\")",
+      "Bash(python -c \"from PIL import Image; print\\('PIL available'\\)\")",
+      "Bash(where python3.exe)",
+      "Bash(where py.exe)",
+      "Bash(where node.exe)",
+      "Bash(Get-Command python* -ErrorAction SilentlyContinue)",
+      "Bash(py *)",
+      "PowerShell(python --version; python3 --version)",
+      "PowerShell(py *)",
+      "Bash(pip show *)",
+      "Bash(npm list *)",
+      "Bash(where node *)"
     ]
   },
   "enabledMcpjsonServers": [

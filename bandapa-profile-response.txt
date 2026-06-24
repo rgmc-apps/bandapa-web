@@ -1,0 +1,282 @@
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<svg viewBox="0 0 1280 800" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+  <defs>
+    <filter id="blur1">
+      <feGaussianBlur in="SourceGraphic" stdDeviation="40"/>
+    </filter>
+    <filter id="blur2">
+      <feGaussianBlur in="SourceGraphic" stdDeviation="60"/>
+    </filter>
+    <filter id="blur3">
+      <feGaussianBlur in="SourceGraphic" stdDeviation="25"/>
+    </filter>
+    <filter id="innerShadow">
+      <feGaussianBlur in="SourceGraphic" stdDeviation="3"/>
+      <feOffset dx="0" dy="2" result="offsetblur"/>
+      <feComponentTransfer>
+        <feFuncA type="linear" slope="0.2"/>
+      </feComponentTransfer>
+    </filter>
+    <radialGradient id="bokeh1" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" style="stop-color:#FFA500;stop-opacity:0.3"/>
+      <stop offset="100%" style="stop-color:#FF8C00;stop-opacity:0"/>
+    </radialGradient>
+    <radialGradient id="bokeh2" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" style="stop-color:#FFB84D;stop-opacity:0.25"/>
+      <stop offset="100%" style="stop-color:#FF9500;stop-opacity:0"/>
+    </radialGradient>
+    <radialGradient id="bokeh3" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" style="stop-color:#FF8C00;stop-opacity:0.2"/>
+      <stop offset="100%" style="stop-color:#FF6B00;stop-opacity:0"/>
+    </radialGradient>
+    <linearGradient id="phoneGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#1A1A1A"/>
+      <stop offset="50%" style="stop-color:#0D0D0D"/>
+      <stop offset="100%" style="stop-color:#1A1A1A"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1280" height="800" fill="#0A0A0A"/>
+
+  <!-- Bokeh Lights - Warm Amber/Orange -->
+  <circle cx="150" cy="100" r="120" fill="url(#bokeh1)" filter="url(#blur2)"/>
+  <circle cx="1100" cy="200" r="95" fill="url(#bokeh2)" filter="url(#blur2)"/>
+  <circle cx="200" cy="650" r="110" fill="url(#bokeh3)" filter="url(#blur1)"/>
+  <circle cx="1050" cy="600" r="85" fill="url(#bokeh1)" filter="url(#blur1)"/>
+  <circle cx="640" cy="-50" r="140" fill="url(#bokeh2)" filter="url(#blur2)"/>
+  <circle cx="100" cy="400" r="75" fill="url(#bokeh3)" filter="url(#blur3)"/>
+  <circle cx="1150" cy="750" r="65" fill="url(#bokeh1)" filter="url(#blur3)"/>
+  <circle cx="400" cy="150" r="90" fill="url(#bokeh2)" filter="url(#blur1)"/>
+  <circle cx="900" cy="50" r="70" fill="url(#bokeh3)" filter="url(#blur3)"/>
+  <circle cx="550" cy="750" r="95" fill="url(#bokeh1)" filter="url(#blur2)"/>
+
+  <!-- Phone Frame Outer (Matte Black) -->
+  <defs>
+    <filter id="phoneInnerShadow">
+      <feGaussianBlur in="SourceGraphic" stdDeviation="2"/>
+      <feOffset dx="1" dy="2" result="offsetblur"/>
+      <feFlood flood-color="#000000" flood-opacity="0.4" result="offsetcolor"/>
+      <feComposite in="offsetcolor" in2="offsetblur" operator="in" result="offsetblur"/>
+      <feComposite in="offsetblur" in2="SourceGraphic" operator="in" result="offsetblur"/>
+    </filter>
+  </defs>
+
+  <!-- Phone Outer Frame -->
+  <rect x="460" y="40" width="360" height="720" rx="50" ry="50" fill="url(#phoneGradient)" filter="url(#phoneInnerShadow)"/>
+
+  <!-- Phone Bezel/Frame Inner Edge -->
+  <rect x="465" y="45" width="350" height="710" rx="45" ry="45" fill="none" stroke="#2A2A2A" stroke-width="2"/>
+
+  <!-- Notch -->
+  <rect x="570" y="45" width="140" height="30" rx="0" ry="0" fill="#0A0A0A"/>
+  <path d="M 570 55 Q 575 45 585 45 L 695 45 Q 705 45 710 55" fill="none" stroke="#1A1A1A" stroke-width="1"/>
+
+  <!-- Phone Screen Group (Scrollable Content) -->
+  <defs>
+    <clipPath id="phoneScreenClip">
+      <rect x="467" y="75" width="346" height="680" rx="43" ry="43"/>
+    </clipPath>
+  </defs>
+
+  <g clip-path="url(#phoneScreenClip)">
+    <!-- Screen Background -->
+    <rect x="467" y="75" width="346" height="680" fill="#141414"/>
+
+    <!-- Status Bar -->
+    <rect x="467" y="75" width="346" height="30" fill="#0A0A0A"/>
+    <text x="475" y="94" font-family="system-ui, -apple-system" font-size="11" font-weight="600" fill="#FFFFFF">9:41</text>
+    <circle cx="803" cy="85" r="3" fill="#FFFFFF" opacity="0.8"/>
+    <circle cx="811" cy="85" r="3" fill="#FFFFFF" opacity="0.8"/>
+    <circle cx="819" cy="85" r="3" fill="#FFFFFF" opacity="0.8"/>
+
+    <!-- App Header -->
+    <rect x="467" y="105" width="346" height="50" fill="#141414"/>
+    <text x="485" y="135" font-family="system-ui, -apple-system" font-size="18" font-weight="700" fill="#FFFFFF">Profile</text>
+    <!-- Settings Gear Icon -->
+    <g transform="translate(795, 130)">
+      <circle cx="0" cy="0" r="12" fill="none" stroke="#CCCCCC" stroke-width="1.5"/>
+      <rect x="-1.5" y="-6" width="3" height="3" fill="#CCCCCC"/>
+      <rect x="-1.5" y="3" width="3" height="3" fill="#CCCCCC"/>
+      <rect x="-6" y="-1.5" width="3" height="3" fill="#CCCCCC"/>
+      <rect x="3" y="-1.5" width="3" height="3" fill="#CCCCCC"/>
+    </g>
+
+    <!-- Divider -->
+    <line x1="467" y1="155" x2="813" y2="155" stroke="#252525" stroke-width="1"/>
+
+    <!-- Profile Card -->
+    <rect x="485" y="170" width="310" height="95" rx="16" ry="16" fill="#1F1F1F" stroke="#2A2A2A" stroke-width="1"/>
+
+    <!-- Avatar Ring -->
+    <circle cx="515" cy="212" r="32" fill="none" stroke="#FFA500" stroke-width="2.5"/>
+    <circle cx="515" cy="212" r="28" fill="#FFA500" opacity="0.1"/>
+    <text x="515" y="220" font-family="system-ui, -apple-system" font-size="20" font-weight="700" fill="#FFA500" text-anchor="middle">E</text>
+
+    <!-- Name and Info -->
+    <text x="560" y="195" font-family="system-ui, -apple-system" font-size="14" font-weight="700" fill="#FFFFFF">Erwin Arellano</text>
+    <text x="560" y="210" font-family="Menlo, monospace" font-size="12" font-weight="500" fill="#FFA500">@erwin404</text>
+
+    <!-- Location -->
+    <g transform="translate(560, 225)">
+      <circle cx="0" cy="0" r="1.5" fill="#888888"/>
+      <text x="6" y="3" font-family="system-ui, -apple-system" font-size="11" fill="#888888">Manila, Philippines</text>
+    </g>
+
+    <!-- Skill Pills -->
+    <rect x="485" y="270" width="70" height="28" rx="14" ry="14" fill="#FFA500"/>
+    <text x="520" y="287" font-family="system-ui, -apple-system" font-size="11" font-weight="600" fill="#000000" text-anchor="middle">Guitarist</text>
+
+    <rect x="565" y="270" width="65" height="28" rx="14" ry="14" fill="#FFA500"/>
+    <text x="597" y="287" font-family="system-ui, -apple-system" font-size="11" font-weight="600" fill="#000000" text-anchor="middle">Vocalist</text>
+
+    <!-- Genre Pills -->
+    <rect x="485" y="305" width="50" height="26" rx="13" ry="13" fill="none" stroke="#666666" stroke-width="1"/>
+    <text x="510" y="321" font-family="system-ui, -apple-system" font-size="10" font-weight="500" fill="#888888" text-anchor="middle">Rock</text>
+
+    <rect x="545" y="305" width="50" height="26" rx="13" ry="13" fill="none" stroke="#666666" stroke-width="1"/>
+    <text x="570" y="321" font-family="system-ui, -apple-system" font-size="10" font-weight="500" fill="#888888" text-anchor="middle">Indie</text>
+
+    <rect x="605" y="305" width="80" height="26" rx="13" ry="13" fill="none" stroke="#666666" stroke-width="1"/>
+    <text x="645" y="321" font-family="system-ui, -apple-system" font-size="10" font-weight="500" fill="#888888" text-anchor="middle">Alternative</text>
+
+    <!-- Divider -->
+    <line x1="485" y1="345" x2="795" y2="345" stroke="#252525" stroke-width="1"/>
+
+    <!-- Basic Info Section -->
+    <text x="485" y="368" font-family="system-ui, -apple-system" font-size="12" font-weight="600" fill="#AAAAAA">BASIC INFO</text>
+
+    <!-- Username Input -->
+    <rect x="485" y="383" width="310" height="40" rx="8" ry="8" fill="#1F1F1F" stroke="#2A2A2A" stroke-width="1"/>
+    <text x="498" y="398" font-family="system-ui, -apple-system" font-size="11" font-weight="500" fill="#888888">Username</text>
+    <text x="498" y="413" font-family="system-ui, -apple-system" font-size="13" font-weight="400" fill="#FFFFFF">erwin404</text>
+
+    <!-- Display Name Input -->
+    <rect x="485" y="430" width="310" height="40" rx="8" ry="8" fill="#1F1F1F" stroke="#2A2A2A" stroke-width="1"/>
+    <text x="498" y="445" font-family="system-ui, -apple-system" font-size="11" font-weight="500" fill="#888888">Display Name</text>
+    <text x="498" y="460" font-family="system-ui, -apple-system" font-size="13" font-weight="400" fill="#FFFFFF">Erwin Arellano</text>
+
+    <!-- City/Country Input -->
+    <rect x="485" y="477" width="310" height="40" rx="8" ry="8" fill="#1F1F1F" stroke="#2A2A2A" stroke-width="1"/>
+    <text x="498" y="492" font-family="system-ui, -apple-system" font-size="11" font-weight="500" fill="#888888">City / Country</text>
+    <text x="498" y="507" font-family="system-ui, -apple-system" font-size="13" font-weight="400" fill="#FFFFFF">Manila, Philippines</text>
+
+    <!-- Divider -->
+    <line x1="485" y1="530" x2="795" y2="530" stroke="#252525" stroke-width="1"/>
+
+    <!-- Artist Info Section -->
+    <text x="485" y="553" font-family="system-ui, -apple-system" font-size="12" font-weight="600" fill="#AAAAAA">ARTIST INFO</text>
+
+    <!-- Instrument Pills Row 1 -->
+    <rect x="485" y="568" width="62" height="28" rx="14" ry="14" fill="#FFA500" opacity="0.15" stroke="#FFA500" stroke-width="1"/>
+    <text x="516" y="585" font-family="system-ui, -apple-system" font-size="10" font-weight="500" fill="#FFA500" text-anchor="middle">Vocalist</text>
+
+    <rect x="557" y="568" width="68" height="28" rx="14" ry="14" fill="#FFA500" opacity="0.15" stroke="#FFA500" stroke-width="1"/>
+    <text x="591" y="585" font-family="system-ui, -apple-system" font-size="10" font-weight="500" fill="#FFA500" text-anchor="middle">Guitarist</text>
+
+    <rect x="635" y="568" width="60" height="28" rx="14" ry="14" fill="none" stroke="#666666" stroke-width="1"/>
+    <text x="665" y="585" font-family="system-ui, -apple-system" font-size="10" font-weight="500" fill="#888888" text-anchor="middle">Bassist</text>
+
+    <!-- Instrument Pills Row 2 -->
+    <rect x="485" y="605" width="66" height="28" rx="14" ry="14" fill="none" stroke="#666666" stroke-width="1"/>
+    <text x="518" y="622" font-family="system-ui, -apple-system" font-size="10" font-weight="500" fill="#888888" text-anchor="middle">Drummer</text>
+
+    <rect x="561" y="605" width="74" height="28" rx="14" ry="14" fill="none" stroke="#666666" stroke-width="1"/>
+    <text x="598" y="622" font-family="system-ui, -apple-system" font-size="10" font-weight="500" fill="#888888" text-anchor="middle">Keyboardist</text>
+
+    <rect x="645" y="605" width="60" height="28" rx="14" ry="14" fill="none" stroke="#666666" stroke-width="1"/>
+    <text x="675" y="622" font-family="system-ui, -apple-system" font-size="10" font-weight="500" fill="#888888" text-anchor="middle">Pianist</text>
+
+    <!-- Genre Pills Row 1 -->
+    <rect x="485" y="642" width="48" height="26" rx="13" ry="13" fill="none" stroke="#666666" stroke-width="1"/>
+    <text x="509" y="657" font-family="system-ui, -apple-system" font-size="9" font-weight="500" fill="#888888" text-anchor="middle">Rock</text>
+
+    <rect x="543" y="642" width="45" height="26" rx="13" ry="13" fill="none" stroke="#666666" stroke-width="1"/>
+    <text x="565" y="657" font-family="system-ui, -apple-system" font-size="9" font-weight="500" fill="#888888" text-anchor="middle">Pop</text>
+
+    <rect x="598" y="642" width="45" height="26" rx="13" ry="13" fill="none" stroke="#666666" stroke-width="1"/>
+    <text x="620" y="657" font-family="system-ui, -apple-system" font-size="9" font-weight="500" fill="#888888" text-anchor="middle">Jazz</text>
+
+    <rect x="653" y="642" width="48" height="26" rx="13" ry="13" fill="none" stroke="#666666" stroke-width="1"/>
+    <text x="677" y="657" font-family="system-ui, -apple-system" font-size="9" font-weight="500" fill="#888888" text-anchor="middle">Blues</text>
+
+    <!-- Genre Pills Row 2 -->
+    <rect x="485" y="675" width="50" height="26" rx="13" ry="13" fill="none" stroke="#666666" stroke-width="1"/>
+    <text x="510" y="690" font-family="system-ui, -apple-system" font-size="9" font-weight="500" fill="#888888" text-anchor="middle">Metal</text>
+
+    <rect x="545" y="675" width="55" height="26" rx="13" ry="13" fill="none" stroke="#666666" stroke-width="1"/>
+    <text x="572" y="690" font-family="system-ui, -apple-system" font-size="9" font-weight="500" fill="#888888" text-anchor="middle">Hip-Hop</text>
+
+    <rect x="610" y="675" width="40" height="26" rx="13" ry="13" fill="none" stroke="#666666" stroke-width="1"/>
+    <text x="630" y="690" font-family="system-ui, -apple-system" font-size="9" font-weight="500" fill="#888888" text-anchor="middle">R&B</text>
+
+    <!-- Divider before social -->
+    <line x1="485" y1="710" x2="795" y2="710" stroke="#252525" stroke-width="1"/>
+
+  </g>
+
+  <!-- Phone Screen Scrollable Content (Social Media & Button) - Continues below visible area -->
+  <g clip-path="url(#phoneScreenClip)">
+    <!-- This content would be scrolled into view -->
+    <!-- Social Media Section -->
+    <text x="485" y="738" font-family="system-ui, -apple-system" font-size="12" font-weight="600" fill="#AAAAAA">SOCIAL MEDIA</text>
+
+    <!-- Instagram -->
+    <rect x="485" y="753" width="310" height="38" rx="8" ry="8" fill="#1F1F1F" stroke="#2A2A2A" stroke-width="1"/>
+    <g transform="translate(498, 765)">
+      <rect x="0" y="0" width="12" height="12" rx="2" ry="2" fill="none" stroke="#FFA500" stroke-width="1"/>
+      <circle cx="6" cy="6" r="3" fill="none" stroke="#FFA500" stroke-width="0.8"/>
+      <circle cx="9.5" cy="2.5" r="0.8" fill="#FFA500"/>
+    </g>
+    <text x="520" y="765" font-family="system-ui, -apple-system" font-size="11" font-weight="500" fill="#888888">Instagram</text>
+    <text x="785" y="765" font-family="system-ui, -apple-system" font-size="12" fill="#666666" text-anchor="end">→</text>
+
+  </g>
+
+  <!-- Bottom Save Button (Outside scroll, at bottom of phone) -->
+  <g clip-path="url(#phoneScreenClip)">
+    <rect x="485" y="720" width="310" height="48" rx="24" ry="24" fill="#FFA500"/>
+    <text x="640" y="749" font-family="system-ui, -apple-system" font-size="14" font-weight="600" fill="#000000" text-anchor="middle">Save Profile</text>
+  </g>
+
+  <!-- Phone Screen Bottom Indicator -->
+  <rect x="600" y="765" width="80" height="4" rx="2" ry="2" fill="#333333" opacity="0.5"/>
+
+  <!-- Bandapa Branding Bottom -->
+  <text x="640" y="795" font-family="system-ui, -apple-system" font-size="13" font-weight="600" fill="#FFA500" text-anchor="middle">Bandapa</text>
+
+</svg>
+```
+
+I've created a comprehensive SVG design reference for the Bandapa musician collaboration app. Here's what's included:
+
+**Key Features:**
+
+1. **Background**: Dark studio (#0A0A0A) with 10 warm amber/orange bokeh circles at varying sizes and opacities, simulating stage lighting
+
+2. **Phone Mockup**: 
+   - 360x720px iPhone-style frame, centered on canvas
+   - Matte black with subtle inner shadow
+   - Notch at top for modern look
+   - Clipped content area for proper display
+
+3. **App Content**:
+   - Status bar with time and signal indicators
+   - "Profile" header with settings gear icon
+   - Premium profile card with amber ring avatar showing "E" initial
+   - User info: Erwin Arellano, @erwin404, Manila, Philippines
+   - Filled amber pills for skills (Guitarist, Vocalist)
+   - Outlined pills for genres (Rock, Indie, Alternative)
+   - Basic Info section with input fields
+   - Artist Info section with instrument and genre pill grid
+   - Save Profile button (amber, full-width pill shape)
+
+4. **Design Details**:
+   - Professional typography hierarchy
+   - Proper color scheme (#FFA500 amber accents, #141414 dark background)
+   - Rounded corners for modern feel
+   - Subtle borders and dividers
+   - All text is readable and properly positioned
+
+The design is production-ready and follows modern mobile app design standards!
