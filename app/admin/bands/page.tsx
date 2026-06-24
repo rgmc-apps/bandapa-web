@@ -2,10 +2,11 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { createClient } from "@/lib/supabase/client";
-import type { Band } from "@/lib/types";
+import type { Band, BandMember, Profile } from "@/lib/types";
 import Modal from "@/components/Modal";
 
 type BandForm = Omit<Band, "id" | "created_at" | "invite_code" | "created_by" | "image_url">;
+type MemberRow = BandMember & { user: Profile };
 
 const empty: BandForm = {
   name: "",
@@ -27,6 +28,12 @@ export default function BandsPage() {
   const [error, setError] = useState("");
   const [genreInput, setGenreInput] = useState("");
 
+  // Members modal
+  const [membersOpen, setMembersOpen] = useState(false);
+  const [membersBand, setMembersBand] = useState<Band | null>(null);
+  const [members, setMembers] = useState<MemberRow[]>([]);
+  const [membersLoading, setMembersLoading] = useState(false);
+
   const supabase = createClient();
 
   const fetchBands = useCallback(async () => {
@@ -37,6 +44,33 @@ export default function BandsPage() {
   }, []);
 
   useEffect(() => { fetchBands(); }, [fetchBands]);
+
+  async function openMembers(band: Band) {
+    setMembersBand(band);
+    setMembers([]);
+    setMembersOpen(true);
+    setMembersLoading(true);
+    const { data } = await supabase
+      .from("band_members")
+      .select("*, user:users(*)")
+      .eq("band_id", band.id)
+      .order("joined_at", { ascending: true });
+    setMembers((data ?? []) as unknown as MemberRow[]);
+    setMembersLoading(false);
+  }
+
+  async function handleRemoveMember(member: MemberRow) {
+    if (!confirm(`Remove ${member.user.full_name || member.user.username} from ${membersBand?.name}?`)) return;
+    await supabase.from("band_members").delete().eq("id", member.id);
+    setMembers(prev => prev.filter(m => m.id !== member.id));
+  }
+
+  async function handleToggleAdmin(member: MemberRow) {
+    const action = member.is_admin ? "Remove admin from" : "Make admin";
+    if (!confirm(`${action} ${member.user.full_name || member.user.username}?`)) return;
+    await supabase.from("band_members").update({ is_admin: !member.is_admin }).eq("id", member.id);
+    setMembers(prev => prev.map(m => m.id === member.id ? { ...m, is_admin: !m.is_admin } : m));
+  }
 
   function openCreate() {
     setEditing(null);
@@ -150,6 +184,9 @@ export default function BandsPage() {
                     <td className="table-cell font-mono text-xs tracking-widest text-chlorophyll-dark">{band.invite_code}</td>
                     <td className="table-cell">
                       <div className="flex items-center gap-1">
+                        <button onClick={() => openMembers(band)} className="p-2 hover:bg-surface-mist rounded-lg text-on-surface-variant hover:text-primary transition-colors" title="View members">
+                          <span className="material-symbols-outlined" style={{ fontSize: "18px" }}>group</span>
+                        </button>
                         <button onClick={() => openEdit(band)} className="p-2 hover:bg-surface-mist rounded-lg text-on-surface-variant hover:text-primary transition-colors" title="Edit">
                           <span className="material-symbols-outlined" style={{ fontSize: "18px" }}>edit</span>
                         </button>
@@ -166,6 +203,7 @@ export default function BandsPage() {
         )}
       </div>
 
+      {/* Band form modal */}
       <Modal title={editing ? "Edit Band" : "New Band"} open={modalOpen} onClose={() => setModalOpen(false)}>
         <div className="p-6 space-y-4">
           <div>
@@ -202,6 +240,82 @@ export default function BandsPage() {
             <button className="btn-primary" onClick={handleSave} disabled={saving || !form.name}>
               {saving ? "Saving…" : editing ? "Save Changes" : "Create Band"}
             </button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Members modal */}
+      <Modal
+        title={membersBand ? `${membersBand.name} — Members` : "Members"}
+        open={membersOpen}
+        onClose={() => setMembersOpen(false)}
+      >
+        <div className="p-6">
+          {membersLoading ? (
+            <div className="py-10 text-center text-sm text-on-surface-variant">Loading…</div>
+          ) : members.length === 0 ? (
+            <div className="py-10 text-center text-sm text-on-surface-variant">No members yet.</div>
+          ) : (
+            <ul className="space-y-2">
+              {members.map((m) => {
+                const displayName = m.user.full_name || m.user.username;
+                const initial = displayName.charAt(0).toUpperCase();
+                const isCreator = membersBand?.created_by === m.user_id;
+                return (
+                  <li key={m.id} className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-surface-mist/60 transition-colors">
+                    <div className="w-9 h-9 rounded-full bg-surface-mist overflow-hidden flex items-center justify-center shrink-0">
+                      {m.user.display_picture ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={m.user.display_picture} alt={m.user.username} className="w-full h-full object-cover" />
+                      ) : (
+                        <span className="font-mono text-sm font-semibold text-primary">{initial}</span>
+                      )}
+                    </div>
+
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <p className="text-sm font-medium text-obsidian">{displayName}</p>
+                        {isCreator && (
+                          <span className="text-[10px] font-mono px-1.5 py-0.5 rounded-full bg-chlorophyll/10 text-chlorophyll-dark border border-chlorophyll/20">Owner</span>
+                        )}
+                        {m.is_admin && !isCreator && (
+                          <span className="text-[10px] font-mono px-1.5 py-0.5 rounded-full bg-primary-container/30 text-primary">Admin</span>
+                        )}
+                      </div>
+                      <p className="text-xs text-on-surface-variant">@{m.user.username}</p>
+                    </div>
+
+                    <div className="flex items-center gap-1 shrink-0">
+                      {!isCreator && (
+                        <button
+                          onClick={() => handleToggleAdmin(m)}
+                          className="p-1.5 hover:bg-surface-mist rounded-lg text-on-surface-variant hover:text-primary transition-colors"
+                          title={m.is_admin ? "Remove admin" : "Make admin"}
+                        >
+                          <span className="material-symbols-outlined" style={{ fontSize: "16px" }}>
+                            {m.is_admin ? "shield_with_heart" : "shield_person"}
+                          </span>
+                        </button>
+                      )}
+                      {!isCreator && (
+                        <button
+                          onClick={() => handleRemoveMember(m)}
+                          className="p-1.5 hover:bg-error-container hover:text-on-error-container rounded-lg text-on-surface-variant transition-colors"
+                          title="Remove member"
+                        >
+                          <span className="material-symbols-outlined" style={{ fontSize: "16px" }}>person_remove</span>
+                        </button>
+                      )}
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+
+          <div className="mt-4 pt-4 border-t border-outline-variant/30 flex items-center justify-between">
+            <p className="text-xs text-on-surface-variant font-mono">{members.length} member{members.length !== 1 ? "s" : ""}</p>
+            <button className="btn-secondary" onClick={() => setMembersOpen(false)}>Close</button>
           </div>
         </div>
       </Modal>
