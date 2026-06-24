@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 
 interface Props {
   address: string;
@@ -34,24 +34,32 @@ export default function AddressAutocomplete({
   const mapRef    = useRef<google.maps.Map | null>(null);
   const markerRef = useRef<google.maps.Marker | null>(null);
 
-  // Stable callback refs — avoids re-running effects when parent re-renders
+  // null = loading, "" = missing, "AIza..." = ready
+  const [apiKey, setApiKey] = useState<string | null>(null);
+
   const onPlaceSelectRef  = useRef(onPlaceSelect);
   const onAddressChangeRef = useRef(onAddressChange);
   useEffect(() => { onPlaceSelectRef.current = onPlaceSelect; }, [onPlaceSelect]);
   useEffect(() => { onAddressChangeRef.current = onAddressChange; }, [onAddressChange]);
 
-  // Boot map + autocomplete once
+  // Fetch key at runtime so Cloud Run env vars are picked up
   useEffect(() => {
-    const key = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
-    if (!key || key === "your-google-maps-api-key-here") return;
+    fetch("/api/maps-key")
+      .then(r => r.json())
+      .then(({ key }: { key: string }) => setApiKey(key ?? ""))
+      .catch(() => setApiKey(""));
+  }, []);
 
-    loadMapsScript(key).then(() => {
+  // Boot map + autocomplete once key is available
+  useEffect(() => {
+    if (!apiKey) return;
+
+    loadMapsScript(apiKey).then(() => {
       if (!mapDivRef.current || !inputRef.current) return;
 
       const hasCoords = lat != null && lng != null;
       const center = hasCoords ? { lat: lat!, lng: lng! } : MANILA;
 
-      // Map
       const map = new google.maps.Map(mapDivRef.current, {
         center,
         zoom: hasCoords ? 16 : 12,
@@ -62,7 +70,6 @@ export default function AddressAutocomplete({
       });
       mapRef.current = map;
 
-      // Marker
       const marker = new google.maps.Marker({
         map,
         position: hasCoords ? center : undefined,
@@ -71,7 +78,6 @@ export default function AddressAutocomplete({
       });
       markerRef.current = marker;
 
-      // Autocomplete
       const ac = new google.maps.places.Autocomplete(inputRef.current!, {
         fields: ["formatted_address", "geometry"],
       });
@@ -94,7 +100,7 @@ export default function AddressAutocomplete({
       });
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // intentionally runs once on mount
+  }, [apiKey]); // runs once when key arrives
 
   // Sync map when lat/lng come in from parent (editing an existing venue)
   useEffect(() => {
@@ -107,8 +113,8 @@ export default function AddressAutocomplete({
     }
   }, [lat, lng]);
 
-  const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
-  const keyMissing = !apiKey || apiKey === "your-google-maps-api-key-here";
+  const keyLoading = apiKey === null;
+  const keyMissing = apiKey === "";
 
   return (
     <div className="space-y-2">
@@ -132,7 +138,11 @@ export default function AddressAutocomplete({
       {/* Map widget */}
       <div className="relative rounded-xl overflow-hidden border border-outline-variant/40 bg-surface-mist"
         style={{ height: 220 }}>
-        {keyMissing ? (
+        {keyLoading ? (
+          <div className="absolute inset-0 flex items-center justify-center">
+            <span className="text-xs text-on-surface-variant font-mono">Loading map…</span>
+          </div>
+        ) : keyMissing ? (
           <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 text-center px-6">
             <span className="material-symbols-outlined text-on-surface-variant" style={{ fontSize: "32px" }}>map</span>
             <p className="text-xs text-on-surface-variant font-mono">
@@ -142,7 +152,6 @@ export default function AddressAutocomplete({
         ) : (
           <>
             <div ref={mapDivRef} className="w-full h-full" />
-            {/* Coordinates overlay */}
             {lat != null && lng != null && (
               <div className="absolute bottom-2 left-2 bg-obsidian-deep/80 backdrop-blur-sm text-pure-white/80 font-mono text-[10px] px-2 py-1 rounded-lg pointer-events-none">
                 {lat.toFixed(6)}, {lng.toFixed(6)}
