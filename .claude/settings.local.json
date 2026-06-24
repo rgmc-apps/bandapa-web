@@ -34,7 +34,20 @@
       "Bash(git push *)",
       "Skill(update-config)",
       "Bash(gcloud config *)",
-      "PowerShell(docker --version)"
+      "PowerShell(docker --version)",
+      "Bash(claude mcp *)",
+      "Bash(supabase --version)",
+      "Bash(npx supabase *)",
+      "Bash(curl *)",
+      "Bash(dir \"C:\\\\claude\\\\bandapa-web\" /a)",
+      "Bash(findstr env *)",
+      "Read(//c/Users/erarellano/AppData/Roaming/**)",
+      "Read(//c/Users/erarellano/.supabase/**)",
+      "Read(//c/Users/erarellano/.supabase/auth/**)",
+      "mcp__supabase__get_logs"
     ]
-  }
+  },
+  "enabledMcpjsonServers": [
+    "supabase"
+  ]
 }

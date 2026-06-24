@@ -41,11 +41,18 @@ export default function BandsPage() {
     setLoading(true);
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
-    const { data } = await supabase
+    const { data: memberRows } = await supabase
       .from("band_members")
-      .select("band:bands(*)")
+      .select("band_id")
       .eq("user_id", user.id);
-    setBands((data ?? []).map((r) => r.band).filter(Boolean) as unknown as Band[]);
+    const bandIds = (memberRows ?? []).map((r) => r.band_id).filter(Boolean);
+    if (!bandIds.length) {
+      setBands([]);
+      setLoading(false);
+      return;
+    }
+    const { data } = await supabase.from("bands").select("*").in("id", bandIds);
+    setBands(data ?? []);
     setLoading(false);
   }, [supabase]);
 
