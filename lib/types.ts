@@ -78,6 +78,11 @@ export interface Profile {
   contact_number: string | null;
   display_picture: string | null;
   instruments: string[];
+  band_roles: string[];
+  genres: string[];
+  social_links: Record<string, string>;
+  city: string | null;
+  country: string | null;
   created_at: string;
 }
 

@@ -44,7 +44,11 @@
       "Read(//c/Users/erarellano/AppData/Roaming/**)",
       "Read(//c/Users/erarellano/.supabase/**)",
       "Read(//c/Users/erarellano/.supabase/auth/**)",
-      "mcp__supabase__get_logs"
+      "mcp__supabase__get_logs",
+      "Bash(npx tsc *)",
+      "Bash(node_modules\\\\.bin\\\\tsc --noEmit)",
+      "Bash(./node_modules/.bin/tsc --noEmit)",
+      "mcp__ide__getDiagnostics"
     ]
   },
   "enabledMcpjsonServers": [
