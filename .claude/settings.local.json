@@ -64,7 +64,9 @@
       "PowerShell(py *)",
       "Bash(pip show *)",
       "Bash(npm list *)",
-      "Bash(where node *)"
+      "Bash(where node *)",
+      "Bash(git checkout *)",
+      "PowerShell(node \"C:\\\\claude\\\\bandapa-web\\\\remove-canvas.js\")"
     ]
   },
   "enabledMcpjsonServers": [
