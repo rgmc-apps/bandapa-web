@@ -11,6 +11,7 @@ export interface Band {
   created_at: string;
   image_url: string | null;
   banner_url: string | null;
+  social_links: Record<string, string>;
 }
 
 export interface Artist {

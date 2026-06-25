@@ -5,13 +5,32 @@ import { useParams, useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import type { Band, BandMember, Profile } from "@/lib/types";
 import Modal from "@/components/Modal";
+import { getTransitionBand, setTransitionBand } from "@/lib/transition-store";
 
 type MemberRow = BandMember & { user: Profile };
+
+const GENRE_LIST = [
+  "Rock", "Pop", "Jazz", "Hip-Hop", "R&B", "Electronic",
+  "Classical", "Country", "Reggae", "Blues", "Metal", "Indie",
+  "Folk", "Latin", "Punk", "Alternative", "Funk", "Gospel",
+];
+
+const SOCIAL_PLATFORMS = [
+  { key: "instagram", label: "Instagram", icon: "photo_camera" },
+  { key: "facebook",  label: "Facebook",  icon: "group"        },
+  { key: "x",        label: "X",          icon: "tag"          },
+  { key: "youtube",  label: "YouTube",    icon: "smart_display" },
+  { key: "tiktok",   label: "TikTok",     icon: "music_video"  },
+  { key: "soundcloud", label: "SoundCloud", icon: "cloud"      },
+  { key: "website",  label: "Website",    icon: "language"     },
+] as const;
 
 export default function BandDetailPage() {
   const { id } = useParams<{ id: string }>();
   const supabase = createClient();
   const router = useRouter();
+
+  const cached = getTransitionBand();
 
   const [band, setBand] = useState<Band | null>(null);
   const [members, setMembers] = useState<MemberRow[]>([]);
@@ -22,6 +41,9 @@ export default function BandDetailPage() {
 
   const [editOpen, setEditOpen] = useState(false);
   const [editForm, setEditForm] = useState({ name: "", description: "", label: "", spotify_url: "", date_formed: "" });
+  const [editGenres, setEditGenres] = useState<Set<string>>(new Set());
+  const [editOtherGenres, setEditOtherGenres] = useState("");
+  const [editSocialLinks, setEditSocialLinks] = useState<Record<string, string>>({});
   const [editImageFile, setEditImageFile] = useState<File | null>(null);
   const [editImagePreview, setEditImagePreview] = useState<string | null>(null);
   const [editBannerFile, setEditBannerFile] = useState<File | null>(null);
@@ -50,11 +72,27 @@ export default function BandDetailPage() {
     setLoading(false);
   }, [supabase, id]);
 
-  useEffect(() => { fetchData(); }, [fetchData]);
+  useEffect(() => {
+    fetchData();
+    return () => { setTransitionBand(null); };
+  }, [fetchData]);
 
   const myMembership = members.find((m) => m.user_id === currentUserId);
   const isOwner = band?.owner_id === currentUserId;
   const isAdmin = isOwner || (myMembership?.is_admin ?? false);
+
+  const displayName = band?.name ?? cached?.name ?? "";
+  const displayCoverUrl = band?.image_url ?? cached?.image_url ?? null;
+  const displayGenres = (band?.genres as string[] | undefined) ?? cached?.genres ?? [];
+
+  function toggleEditGenre(genre: string) {
+    setEditGenres((prev) => {
+      const next = new Set(prev);
+      if (next.has(genre)) next.delete(genre);
+      else next.add(genre);
+      return next;
+    });
+  }
 
   function openEdit() {
     if (!band) return;
@@ -65,6 +103,12 @@ export default function BandDetailPage() {
       spotify_url: band.spotify_url ?? "",
       date_formed: band.date_formed ?? "",
     });
+    const knownSet = new Set(GENRE_LIST);
+    const known = (band.genres as string[]).filter((g) => knownSet.has(g));
+    const other = (band.genres as string[]).filter((g) => !knownSet.has(g));
+    setEditGenres(new Set(known));
+    setEditOtherGenres(other.join(", "));
+    setEditSocialLinks(band.social_links ?? {});
     setEditImageFile(null);
     setEditImagePreview(null);
     setEditBannerFile(null);
@@ -101,6 +145,16 @@ export default function BandDetailPage() {
       }
     }
 
+    const genres = [
+      ...editGenres,
+      ...editOtherGenres.split(",").map((g) => g.trim()).filter(Boolean),
+    ];
+
+    // Strip empty social link values before saving
+    const social_links = Object.fromEntries(
+      Object.entries(editSocialLinks).filter(([, v]) => v.trim() !== "")
+    );
+
     const { error: err } = await supabase
       .from("bands")
       .update({
@@ -109,6 +163,8 @@ export default function BandDetailPage() {
         label: editForm.label || null,
         spotify_url: editForm.spotify_url || null,
         date_formed: editForm.date_formed || null,
+        genres,
+        social_links,
         image_url,
         banner_url,
       })
@@ -177,34 +233,39 @@ export default function BandDetailPage() {
     reader.readAsDataURL(file);
   }
 
-  if (loading || !band) {
+  if (loading && !cached && !band) {
     return <div className="p-8 text-center text-sm text-on-surface-variant">Loading…</div>;
   }
 
-  const displayImage = editImagePreview ?? band.image_url;
-  const displayBanner = editBannerPreview ?? band.banner_url;
+  const displayImage = editImagePreview ?? band?.image_url ?? null;
+  const displayBanner = editBannerPreview ?? band?.banner_url ?? null;
+
+  const socialLinks = band?.social_links ?? {};
+  const filledSocials = SOCIAL_PLATFORMS.filter((p) => socialLinks[p.key]);
+  const hasLinks = !!band?.spotify_url || filledSocials.length > 0;
 
   return (
     <div className="p-6 md:p-8 page-enter max-w-3xl">
       <div className="card mb-6 overflow-hidden">
         {/* Banner */}
         <div className="relative h-44">
-          {band.banner_url ? (
+          {band?.banner_url ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img src={band.banner_url} alt="" className="w-full h-full object-cover" />
           ) : (
             <div className="w-full h-full bg-gradient-to-br from-primary/30 via-chlorophyll/20 to-surface-mist" />
           )}
 
-          {/* Top-right actions */}
           <div className="absolute top-3 right-3 flex gap-2">
-            <button
-              onClick={handleShare}
-              className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg bg-white/90 backdrop-blur-sm text-obsidian hover:bg-white transition-colors font-medium shadow-sm"
-            >
-              <span className="material-symbols-outlined" style={{ fontSize: "14px" }}>share</span>
-              {copiedShare ? "Copied!" : "Share"}
-            </button>
+            {band && (
+              <button
+                onClick={handleShare}
+                className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg bg-white/90 backdrop-blur-sm text-obsidian hover:bg-white transition-colors font-medium shadow-sm"
+              >
+                <span className="material-symbols-outlined" style={{ fontSize: "14px" }}>share</span>
+                {copiedShare ? "Copied!" : "Share"}
+              </button>
+            )}
             {isAdmin && (
               <button
                 onClick={openEdit}
@@ -216,12 +277,14 @@ export default function BandDetailPage() {
             )}
           </div>
 
-          {/* Display picture overlapping banner */}
           <div className="absolute -bottom-10 left-6">
-            <div className="w-20 h-20 rounded-2xl ring-4 ring-white bg-surface-mist overflow-hidden flex items-center justify-center shadow-md">
-              {band.image_url ? (
+            <div
+              className="w-20 h-20 rounded-2xl ring-4 ring-white bg-surface-mist overflow-hidden flex items-center justify-center shadow-md"
+              style={{ viewTransitionName: `band-cover-${id}` }}
+            >
+              {displayCoverUrl ? (
                 // eslint-disable-next-line @next/next/no-img-element
-                <img src={band.image_url} alt={band.name} className="w-full h-full object-cover" />
+                <img src={displayCoverUrl} alt={displayName} className="w-full h-full object-cover" />
               ) : (
                 <span className="material-symbols-outlined text-primary" style={{ fontSize: "32px" }}>groups</span>
               )}
@@ -231,85 +294,162 @@ export default function BandDetailPage() {
 
         {/* Band info */}
         <div className="pt-14 px-6 pb-6">
-          <h1 className="font-headline font-bold text-2xl text-obsidian">{band.name}</h1>
-          <p className="text-sm text-on-surface-variant mt-1">{band.description || "No description yet."}</p>
+          <h1
+            className="font-headline font-bold text-2xl text-obsidian"
+            style={{ viewTransitionName: `band-name-${id}` }}
+          >
+            {displayName}
+          </h1>
+
+          {band ? (
+            <p className="text-sm text-on-surface-variant mt-1">{band.description || "No description yet."}</p>
+          ) : (
+            <div className="h-4 band-skeleton rounded w-3/4 mt-2" />
+          )}
+
           <div className="flex flex-wrap gap-1.5 mt-2">
-            {band.genres.map((g) => (
-              <span key={g} className="text-xs font-mono px-2 py-0.5 rounded-full bg-chlorophyll/10 text-chlorophyll-dark border border-chlorophyll/20">{g}</span>
+            {displayGenres.map((g, i) => (
+              <span
+                key={g}
+                className="genre-pill-enter text-xs font-mono px-2 py-0.5 rounded-full bg-chlorophyll/10 text-chlorophyll-dark border border-chlorophyll/20"
+                style={{ animationDelay: `${180 + i * 50}ms` }}
+              >
+                {g}
+              </span>
             ))}
           </div>
 
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-sm mt-5 pt-5 border-t border-outline-variant">
             <div>
               <p className="label-field">Formed</p>
-              <p className="text-obsidian">{band.date_formed || "—"}</p>
+              {band ? (
+                <p className="text-obsidian">{band.date_formed || "—"}</p>
+              ) : (
+                <div className="h-4 band-skeleton rounded w-20 mt-1" />
+              )}
             </div>
             <div>
               <p className="label-field">Label</p>
-              <p className="text-obsidian">{band.label || "—"}</p>
+              {band ? (
+                <p className="text-obsidian">{band.label || "—"}</p>
+              ) : (
+                <div className="h-4 band-skeleton rounded w-24 mt-1" />
+              )}
             </div>
             <div className="col-span-2">
               <p className="label-field">Invite code</p>
-              <div className="flex items-center gap-3 flex-wrap">
+              {band ? (
                 <button onClick={copyInviteCode} className="flex items-center gap-1.5 font-mono text-chlorophyll-dark hover:underline">
                   {band.invite_code}
                   <span className="material-symbols-outlined" style={{ fontSize: "14px" }}>{copied ? "check" : "content_copy"}</span>
                 </button>
-              </div>
+              ) : (
+                <div className="h-4 band-skeleton rounded w-32 mt-1" />
+              )}
             </div>
           </div>
+
+          {/* Social links */}
+          {hasLinks && (
+            <div className="flex flex-wrap gap-2 mt-4 pt-4 border-t border-outline-variant/50">
+              {band?.spotify_url && (
+                <a
+                  href={band.spotify_url}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex items-center gap-1.5 text-xs font-mono px-3 py-1.5 rounded-full bg-surface-mist border border-outline-variant text-on-surface-variant hover:border-chlorophyll-dark hover:text-chlorophyll-dark transition-colors"
+                >
+                  <span className="material-symbols-outlined" style={{ fontSize: "14px" }}>headphones</span>
+                  Spotify
+                </a>
+              )}
+              {filledSocials.map((p, i) => (
+                <a
+                  key={p.key}
+                  href={socialLinks[p.key]}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="genre-pill-enter inline-flex items-center gap-1.5 text-xs font-mono px-3 py-1.5 rounded-full bg-surface-mist border border-outline-variant text-on-surface-variant hover:border-chlorophyll-dark hover:text-chlorophyll-dark transition-colors"
+                  style={{ animationDelay: `${i * 40}ms` }}
+                >
+                  <span className="material-symbols-outlined" style={{ fontSize: "14px" }}>{p.icon}</span>
+                  {p.label}
+                </a>
+              ))}
+            </div>
+          )}
         </div>
       </div>
 
       <div className="card p-6 mb-6">
-        <h2 className="font-headline font-semibold text-sm text-obsidian mb-3">Members ({members.length})</h2>
-        <ul className="space-y-2">
-          {members.map((m) => (
-            <li key={m.id} className="flex items-center justify-between px-3 py-2 rounded-lg hover:bg-surface-mist/60 transition-colors">
-              <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-full bg-surface-mist overflow-hidden flex items-center justify-center shrink-0">
-                  {m.user.display_picture ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img src={m.user.display_picture} alt={m.user.username} className="w-full h-full object-cover" />
-                  ) : (
-                    <span className="font-mono text-xs text-primary">{(m.user.full_name || m.user.username).charAt(0).toUpperCase()}</span>
+        <h2 className="font-headline font-semibold text-sm text-obsidian mb-3">
+          Members {members.length > 0 && `(${members.length})`}
+        </h2>
+        {loading && members.length === 0 ? (
+          <ul className="space-y-2">
+            {[0, 1].map((i) => (
+              <li key={i} className="flex items-center gap-3 px-3 py-2.5 spring-row" style={{ animationDelay: `${300 + i * 60}ms` }}>
+                <div className="w-8 h-8 rounded-full band-skeleton shrink-0" />
+                <div className="flex-1">
+                  <div className="h-3.5 band-skeleton rounded w-32 mb-1.5" />
+                  <div className="h-3 band-skeleton rounded w-20" />
+                </div>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <ul className="space-y-2">
+            {members.map((m, i) => (
+              <li
+                key={m.id}
+                className="flex items-center justify-between px-3 py-2 rounded-lg hover:bg-surface-mist/60 transition-colors spring-row"
+                style={{ animationDelay: `${300 + i * 40}ms` }}
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-full bg-surface-mist overflow-hidden flex items-center justify-center shrink-0">
+                    {m.user.display_picture ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={m.user.display_picture} alt={m.user.username} className="w-full h-full object-cover" />
+                    ) : (
+                      <span className="font-mono text-xs text-primary">{(m.user.full_name || m.user.username).charAt(0).toUpperCase()}</span>
+                    )}
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-obsidian">{m.user.full_name || m.user.username}</p>
+                    <p className="text-xs text-on-surface-variant">@{m.user.username}</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  {(m.is_admin || m.user_id === band?.owner_id) && (
+                    <span className="text-xs font-mono px-2 py-0.5 rounded-full bg-primary-container/30 text-primary">
+                      {m.user_id === band?.owner_id ? "Owner" : "Admin"}
+                    </span>
+                  )}
+                  {isAdmin && m.user_id !== currentUserId && m.user_id !== band?.owner_id && (
+                    <button
+                      onClick={() => handleToggleAdmin(m)}
+                      className="p-1.5 hover:bg-surface-mist rounded-lg text-on-surface-variant hover:text-primary transition-colors"
+                      title={m.is_admin ? "Remove admin" : "Make admin"}
+                    >
+                      <span className="material-symbols-outlined" style={{ fontSize: "16px" }}>
+                        {m.is_admin ? "shield_with_heart" : "shield_person"}
+                      </span>
+                    </button>
+                  )}
+                  {isAdmin && !m.is_admin && m.user_id !== currentUserId && m.user_id !== band?.owner_id && (
+                    <button
+                      onClick={() => handleRemoveMember(m)}
+                      className="p-1.5 hover:bg-error-container hover:text-on-error-container rounded-lg text-on-surface-variant transition-colors"
+                      title="Remove"
+                    >
+                      <span className="material-symbols-outlined" style={{ fontSize: "16px" }}>person_remove</span>
+                    </button>
                   )}
                 </div>
-                <div>
-                  <p className="text-sm font-medium text-obsidian">{m.user.full_name || m.user.username}</p>
-                  <p className="text-xs text-on-surface-variant">@{m.user.username}</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-2">
-                {(m.is_admin || m.user_id === band.owner_id) && (
-                  <span className="text-xs font-mono px-2 py-0.5 rounded-full bg-primary-container/30 text-primary">
-                    {m.user_id === band.owner_id ? "Owner" : "Admin"}
-                  </span>
-                )}
-                {isAdmin && m.user_id !== currentUserId && m.user_id !== band.owner_id && (
-                  <button
-                    onClick={() => handleToggleAdmin(m)}
-                    className="p-1.5 hover:bg-surface-mist rounded-lg text-on-surface-variant hover:text-primary transition-colors"
-                    title={m.is_admin ? "Remove admin" : "Make admin"}
-                  >
-                    <span className="material-symbols-outlined" style={{ fontSize: "16px" }}>
-                      {m.is_admin ? "shield_with_heart" : "shield_person"}
-                    </span>
-                  </button>
-                )}
-                {isAdmin && !m.is_admin && m.user_id !== currentUserId && m.user_id !== band.owner_id && (
-                  <button
-                    onClick={() => handleRemoveMember(m)}
-                    className="p-1.5 hover:bg-error-container hover:text-on-error-container rounded-lg text-on-surface-variant transition-colors"
-                    title="Remove"
-                  >
-                    <span className="material-symbols-outlined" style={{ fontSize: "16px" }}>person_remove</span>
-                  </button>
-                )}
-              </div>
-            </li>
-          ))}
-        </ul>
+              </li>
+            ))}
+          </ul>
+        )}
       </div>
 
       {myMembership && !isOwner && (
@@ -341,7 +481,7 @@ export default function BandDetailPage() {
             <input ref={bannerInputRef} type="file" accept="image/*" className="hidden" onChange={handleBannerPick} />
           </div>
 
-          {/* Display picture upload */}
+          {/* Cover photo */}
           <div className="flex items-center gap-4">
             <button
               type="button"
@@ -363,10 +503,42 @@ export default function BandDetailPage() {
             <label className="label-field">Band name</label>
             <input className="input-field" value={editForm.name} onChange={(e) => setEditForm({ ...editForm, name: e.target.value })} />
           </div>
+
           <div>
             <label className="label-field">Description</label>
             <textarea className="input-field min-h-[64px] resize-y" value={editForm.description} onChange={(e) => setEditForm({ ...editForm, description: e.target.value })} />
           </div>
+
+          {/* Genre picker */}
+          <div>
+            <label className="label-field">Genres</label>
+            <div className="flex flex-wrap gap-1.5">
+              {GENRE_LIST.map((genre) => {
+                const checked = editGenres.has(genre);
+                return (
+                  <button
+                    key={genre}
+                    type="button"
+                    onClick={() => toggleEditGenre(genre)}
+                    className={`text-xs font-mono px-2.5 py-1 rounded-full border transition-colors ${
+                      checked
+                        ? "bg-chlorophyll text-obsidian border-chlorophyll"
+                        : "bg-white text-on-surface-variant border-outline-variant hover:border-chlorophyll-dark"
+                    }`}
+                  >
+                    {genre}
+                  </button>
+                );
+              })}
+            </div>
+            <input
+              className="input-field mt-2"
+              placeholder="Other genres, comma-separated"
+              value={editOtherGenres}
+              onChange={(e) => setEditOtherGenres(e.target.value)}
+            />
+          </div>
+
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="label-field">Date formed</label>
@@ -377,11 +549,37 @@ export default function BandDetailPage() {
               <input className="input-field" value={editForm.label} onChange={(e) => setEditForm({ ...editForm, label: e.target.value })} />
             </div>
           </div>
+
           <div>
-            <label className="label-field">Spotify artist URL</label>
-            <input className="input-field" value={editForm.spotify_url} onChange={(e) => setEditForm({ ...editForm, spotify_url: e.target.value })} />
+            <label className="label-field">Spotify URL</label>
+            <input className="input-field" value={editForm.spotify_url} onChange={(e) => setEditForm({ ...editForm, spotify_url: e.target.value })} placeholder="https://open.spotify.com/artist/…" />
           </div>
+
+          {/* Social links */}
+          <div>
+            <label className="label-field">Social links</label>
+            <div className="space-y-2">
+              {SOCIAL_PLATFORMS.map((p) => (
+                <div key={p.key} className="flex items-center gap-2.5">
+                  <span className="w-[88px] text-xs font-mono text-on-surface-variant shrink-0 flex items-center gap-1.5">
+                    <span className="material-symbols-outlined" style={{ fontSize: "14px" }}>{p.icon}</span>
+                    {p.label}
+                  </span>
+                  <input
+                    className="input-field"
+                    value={editSocialLinks[p.key] ?? ""}
+                    onChange={(e) =>
+                      setEditSocialLinks((prev) => ({ ...prev, [p.key]: e.target.value }))
+                    }
+                    placeholder="https://…"
+                  />
+                </div>
+              ))}
+            </div>
+          </div>
+
           {error && <p className="text-error text-sm">{error}</p>}
+
           <div className="flex justify-end gap-3 pt-2">
             <button className="btn-secondary" onClick={() => setEditOpen(false)}>Cancel</button>
             <button className="btn-primary" onClick={handleSaveEdit} disabled={saving}>{saving ? "Saving…" : "Save changes"}</button>

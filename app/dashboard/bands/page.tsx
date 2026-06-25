@@ -2,9 +2,11 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import type { Band } from "@/lib/types";
 import Modal from "@/components/Modal";
+import { setTransitionBand } from "@/lib/transition-store";
 
 const GENRE_LIST = [
   "Rock", "Pop", "Jazz", "Hip-Hop", "R&B", "Electronic",
@@ -24,6 +26,7 @@ const emptyForm: CreateForm = { name: "", description: "", date_formed: "", labe
 
 export default function BandsPage() {
   const supabase = createClient();
+  const router = useRouter();
   const [bands, setBands] = useState<Band[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -57,6 +60,24 @@ export default function BandsPage() {
   }, [supabase]);
 
   useEffect(() => { fetchBands(); }, [fetchBands]);
+
+  function navigateToBand(band: Band) {
+    setTransitionBand({ id: band.id, name: band.name, image_url: band.image_url, genres: band.genres as string[] });
+
+    const href = `/dashboard/bands/${band.id}`;
+    const reducedMotion = typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+    if (typeof document === "undefined" || !document.startViewTransition || reducedMotion) {
+      router.push(href);
+      return;
+    }
+
+    document.startViewTransition(async () => {
+      router.push(href);
+      // Two rAFs give React time to render the new page from transition store
+      await new Promise<void>((r) => requestAnimationFrame(() => requestAnimationFrame(() => r())));
+    });
+  }
 
   function openCreate() {
     setForm(emptyForm);
@@ -152,7 +173,7 @@ export default function BandsPage() {
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="font-headline font-bold text-2xl text-obsidian">Your bands</h1>
-          <p className="text-sm text-on-surface-variant mt-0.5">{bands.length} total</p>
+          <p className="text-sm text-on-surface-variant mt-0.5">{loading ? "" : `${bands.length} total`}</p>
         </div>
         <div className="flex gap-2">
           <Link href="/dashboard/bands/join" className="btn-secondary">
@@ -167,22 +188,52 @@ export default function BandsPage() {
       </div>
 
       {loading ? (
-        <div className="py-16 text-center text-sm text-on-surface-variant">Loading…</div>
+        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {[0, 1, 2].map((i) => (
+            <div key={i} className="card p-5 spring-row" style={{ animationDelay: `${i * 60}ms` }}>
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-12 h-12 rounded-xl band-skeleton shrink-0" />
+                <div className="h-4 band-skeleton rounded-md flex-1" />
+              </div>
+              <div className="flex gap-1.5">
+                <div className="h-5 w-16 band-skeleton rounded-full" />
+                <div className="h-5 w-12 band-skeleton rounded-full" style={{ animationDelay: "120ms" }} />
+              </div>
+            </div>
+          ))}
+        </div>
       ) : bands.length === 0 ? (
-        <div className="card py-16 text-center text-sm text-on-surface-variant">
-          No bands yet. Create one or join with an invite code.
+        <div className="card py-14 text-center px-8">
+          <div className="w-14 h-14 rounded-2xl bg-surface-mist flex items-center justify-center mx-auto mb-4">
+            <span className="material-symbols-outlined text-primary" style={{ fontSize: "26px" }}>groups</span>
+          </div>
+          <h3 className="font-headline font-semibold text-obsidian mb-1.5">No bands yet</h3>
+          <p className="text-sm text-on-surface-variant mb-6 max-w-[260px] mx-auto">Create a band or join one with an invite code from a bandmate.</p>
+          <div className="flex justify-center gap-3 flex-wrap">
+            <Link href="/dashboard/bands/join" className="btn-secondary">
+              <span className="material-symbols-outlined" style={{ fontSize: "16px" }}>key</span>
+              Join with code
+            </Link>
+            <button onClick={openCreate} className="btn-primary">
+              <span className="material-symbols-outlined" style={{ fontSize: "16px" }}>add</span>
+              Create band
+            </button>
+          </div>
         </div>
       ) : (
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {bands.map((band, i) => (
-            <Link
+            <button
               key={band.id}
-              href={`/dashboard/bands/${band.id}`}
-              className="card p-5 hover:shadow-card hover:-translate-y-0.5 transition-all duration-200 spring-row"
+              onClick={() => navigateToBand(band)}
+              className="card p-5 hover:shadow-card hover:-translate-y-0.5 transition-all duration-200 spring-row text-left w-full group"
               style={{ animationDelay: `${i * 40}ms` }}
             >
               <div className="flex items-center gap-3 mb-3">
-                <div className="w-12 h-12 rounded-xl bg-surface-mist overflow-hidden shrink-0 flex items-center justify-center">
+                <div
+                  className="w-12 h-12 rounded-xl bg-surface-mist overflow-hidden shrink-0 flex items-center justify-center"
+                  style={{ viewTransitionName: `band-cover-${band.id}` }}
+                >
                   {band.image_url ? (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img src={band.image_url} alt={band.name} className="w-full h-full object-cover" />
@@ -190,14 +241,30 @@ export default function BandsPage() {
                     <span className="material-symbols-outlined text-primary" style={{ fontSize: "22px" }}>groups</span>
                   )}
                 </div>
-                <h3 className="font-headline font-semibold text-obsidian truncate">{band.name}</h3>
+                <h3
+                  className="font-headline font-semibold text-obsidian truncate flex-1"
+                  style={{ viewTransitionName: `band-name-${band.id}` }}
+                >
+                  {band.name}
+                </h3>
+                <span
+                  className="material-symbols-outlined text-on-surface-variant/30 group-hover:text-on-surface-variant/70 transition-colors shrink-0"
+                  style={{ fontSize: "18px" }}
+                >
+                  chevron_right
+                </span>
               </div>
               <div className="flex flex-wrap gap-1.5">
-                {band.genres.slice(0, 3).map((g) => (
+                {(band.genres as string[]).slice(0, 3).map((g) => (
                   <span key={g} className="text-xs font-mono px-2 py-0.5 rounded-full bg-chlorophyll/10 text-chlorophyll-dark border border-chlorophyll/20">{g}</span>
                 ))}
+                {(band.genres as string[]).length > 3 && (
+                  <span className="text-xs font-mono px-2 py-0.5 text-on-surface-variant/50">
+                    +{(band.genres as string[]).length - 3}
+                  </span>
+                )}
               </div>
-            </Link>
+            </button>
           ))}
         </div>
       )}

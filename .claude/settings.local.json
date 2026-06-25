@@ -68,7 +68,10 @@
       "Bash(git checkout *)",
       "PowerShell(node \"C:\\\\claude\\\\bandapa-web\\\\remove-canvas.js\")",
       "Bash(git diff *)",
-      "mcp__supabase__list_storage_buckets"
+      "mcp__supabase__list_storage_buckets",
+      "Bash(Get-ChildItem -Recurse -File \"C:\\\\claude\\\\bandapa-web\\\\src\")",
+      "Bash(Select-Object -First 50 FullName)",
+      "Bash(kill %1)"
     ]
   },
   "enabledMcpjsonServers": [

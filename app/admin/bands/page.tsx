@@ -15,6 +15,7 @@ const empty: BandForm = {
   date_formed: new Date().toISOString().split("T")[0],
   label: "",
   spotify_url: "",
+  social_links: {},
 };
 
 export default function BandsPage() {
@@ -90,6 +91,7 @@ export default function BandsPage() {
       date_formed: band.date_formed ?? "",
       label: band.label ?? "",
       spotify_url: band.spotify_url ?? "",
+      social_links: band.social_links ?? {},
     });
     setGenreInput(band.genres.join(", "));
     setError("");
