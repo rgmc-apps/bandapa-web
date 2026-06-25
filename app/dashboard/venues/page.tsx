@@ -116,7 +116,20 @@ export default function VenuesPage() {
                 )}
               </div>
               <h3 className="font-headline font-semibold text-obsidian mb-1">{venue.name}</h3>
-              <p className="text-xs text-on-surface-variant">{venue.address}</p>
+              <p className="text-xs text-on-surface-variant mb-3">{venue.address}</p>
+              <a
+                href={
+                  venue.lat && venue.lng
+                    ? `https://www.google.com/maps/dir/?api=1&destination=${venue.lat},${venue.lng}`
+                    : `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(venue.address)}`
+                }
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 text-xs font-mono text-primary hover:text-primary/70 transition-colors"
+              >
+                <span className="material-symbols-outlined" style={{ fontSize: "14px", fontVariationSettings: "'FILL' 1" }}>directions</span>
+                Get directions
+              </a>
             </div>
           ))}
         </div>
