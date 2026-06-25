@@ -39,9 +39,10 @@ function RegisterForm() {
     setGoogleLoading(true);
     setError("");
 
+    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? window.location.origin;
     const redirectTo = next
-      ? `${window.location.origin}/auth/callback?next=${encodeURIComponent(next)}`
-      : `${window.location.origin}/auth/callback`;
+      ? `${siteUrl}/auth/callback?next=${encodeURIComponent(next)}`
+      : `${siteUrl}/auth/callback`;
 
     await supabase.auth.signInWithOAuth({
       provider: "google",
