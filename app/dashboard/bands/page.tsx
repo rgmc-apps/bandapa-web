@@ -17,10 +17,10 @@ type CreateForm = {
   description: string;
   date_formed: string;
   label: string;
-  spotify_artist_id: string;
+  spotify_url: string;
 };
 
-const emptyForm: CreateForm = { name: "", description: "", date_formed: "", label: "", spotify_artist_id: "" };
+const emptyForm: CreateForm = { name: "", description: "", date_formed: "", label: "", spotify_url: "" };
 
 export default function BandsPage() {
   const supabase = createClient();
@@ -107,8 +107,8 @@ export default function BandsPage() {
         genres,
         date_formed: form.date_formed || new Date().toISOString().slice(0, 10),
         label: form.label || null,
-        spotify_artist_id: form.spotify_artist_id || null,
-        created_by: user.id,
+        spotify_url: form.spotify_url || null,
+        owner_id: user.id,
       })
       .select("*")
       .single();
@@ -129,7 +129,7 @@ export default function BandsPage() {
       }
     }
 
-    await supabase.from("band_members").insert({ band_id: band.id, user_id: user.id, is_admin: true });
+    await supabase.from("band_members").insert({ band_id: band.id, user_id: user.id, role: "admin" });
 
     setCreateOpen(false);
     setSaving(false);
@@ -271,7 +271,7 @@ export default function BandsPage() {
 
           <div>
             <label className="label-field">Spotify artist URL</label>
-            <input className="input-field" value={form.spotify_artist_id} onChange={(e) => setForm({ ...form, spotify_artist_id: e.target.value })} placeholder="https://open.spotify.com/artist/…" />
+            <input className="input-field" value={form.spotify_url} onChange={(e) => setForm({ ...form, spotify_url: e.target.value })} placeholder="https://open.spotify.com/artist/…" />
           </div>
 
           {error && <p className="text-error text-sm">{error}</p>}

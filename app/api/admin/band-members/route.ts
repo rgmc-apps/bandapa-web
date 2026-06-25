@@ -37,10 +37,10 @@ export async function PATCH(request: NextRequest) {
   const adminClient = await verifyAdmin();
   if (!adminClient) return Response.json({ error: "Forbidden" }, { status: 403 });
 
-  const { member_id, is_admin } = await request.json();
+  const { member_id, role } = await request.json();
   const { error } = await adminClient
     .from("band_members")
-    .update({ is_admin })
+    .update({ role })
     .eq("id", member_id);
 
   if (error) return Response.json({ error: error.message }, { status: 500 });

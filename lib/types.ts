@@ -3,13 +3,14 @@ export interface Band {
   name: string;
   description: string | null;
   genres: string[];
-  date_formed: string;
+  date_formed: string | null;
   label: string | null;
-  spotify_artist_id: string | null;
+  spotify_url: string | null;
   invite_code: string;
-  created_by: string | null;
+  owner_id: string | null;
   created_at: string;
   image_url: string | null;
+  banner_url: string | null;
 }
 
 export interface Artist {
@@ -90,7 +91,7 @@ export interface BandMember {
   id: string;
   band_id: string;
   user_id: string;
-  is_admin: boolean;
+  role: string;
   joined_at: string;
 }
 

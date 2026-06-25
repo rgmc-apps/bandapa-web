@@ -67,7 +67,8 @@
       "Bash(where node *)",
       "Bash(git checkout *)",
       "PowerShell(node \"C:\\\\claude\\\\bandapa-web\\\\remove-canvas.js\")",
-      "Bash(git diff *)"
+      "Bash(git diff *)",
+      "mcp__supabase__list_storage_buckets"
     ]
   },
   "enabledMcpjsonServers": [

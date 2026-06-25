@@ -5,7 +5,7 @@ import { createClient } from "@/lib/supabase/client";
 import type { Band, BandMember, Profile } from "@/lib/types";
 import Modal from "@/components/Modal";
 
-type BandForm = Omit<Band, "id" | "created_at" | "invite_code" | "created_by" | "image_url">;
+type BandForm = Omit<Band, "id" | "created_at" | "invite_code" | "owner_id" | "image_url" | "banner_url">;
 type MemberRow = BandMember & { user: Profile };
 
 const empty: BandForm = {
@@ -14,7 +14,7 @@ const empty: BandForm = {
   genres: [],
   date_formed: new Date().toISOString().split("T")[0],
   label: "",
-  spotify_artist_id: "",
+  spotify_url: "",
 };
 
 export default function BandsPage() {
@@ -63,14 +63,16 @@ export default function BandsPage() {
   }
 
   async function handleToggleAdmin(member: MemberRow) {
-    const action = member.is_admin ? "Remove admin from" : "Make admin";
+    const isCurrentlyAdmin = member.role === "admin";
+    const action = isCurrentlyAdmin ? "Remove admin from" : "Make admin";
     if (!confirm(`${action} ${member.user.full_name || member.user.username}?`)) return;
+    const newRole = isCurrentlyAdmin ? "member" : "admin";
     await fetch("/api/admin/band-members", {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ member_id: member.id, is_admin: !member.is_admin }),
+      body: JSON.stringify({ member_id: member.id, role: newRole }),
     });
-    setMembers(prev => prev.map(m => m.id === member.id ? { ...m, is_admin: !m.is_admin } : m));
+    setMembers(prev => prev.map(m => m.id === member.id ? { ...m, role: newRole } : m));
   }
 
   function openCreate() {
@@ -87,9 +89,9 @@ export default function BandsPage() {
       name: band.name,
       description: band.description ?? "",
       genres: band.genres,
-      date_formed: band.date_formed,
+      date_formed: band.date_formed ?? "",
       label: band.label ?? "",
-      spotify_artist_id: band.spotify_artist_id ?? "",
+      spotify_url: band.spotify_url ?? "",
     });
     setGenreInput(band.genres.join(", "));
     setError("");
@@ -104,7 +106,7 @@ export default function BandsPage() {
       genres: genreInput.split(",").map((g) => g.trim()).filter(Boolean),
       description: form.description || null,
       label: form.label || null,
-      spotify_artist_id: form.spotify_artist_id || null,
+      spotify_url: form.spotify_url || null,
     };
 
     let err;
@@ -222,7 +224,7 @@ export default function BandsPage() {
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="label-field">Date Formed</label>
-              <input type="date" className="input-field" value={form.date_formed} onChange={(e) => setForm({ ...form, date_formed: e.target.value })} />
+              <input type="date" className="input-field" value={form.date_formed ?? ""} onChange={(e) => setForm({ ...form, date_formed: e.target.value })} />
             </div>
             <div>
               <label className="label-field">Record Label</label>
@@ -231,7 +233,7 @@ export default function BandsPage() {
           </div>
           <div>
             <label className="label-field">Spotify Artist ID</label>
-            <input className="input-field font-mono" value={form.spotify_artist_id ?? ""} onChange={(e) => setForm({ ...form, spotify_artist_id: e.target.value })} placeholder="Optional" />
+            <input className="input-field font-mono" value={form.spotify_url ?? ""} onChange={(e) => setForm({ ...form, spotify_url: e.target.value })} placeholder="Optional" />
           </div>
 
           {error && <p className="text-error text-sm">{error}</p>}
@@ -261,7 +263,7 @@ export default function BandsPage() {
               {members.map((m) => {
                 const displayName = m.user.full_name || m.user.username;
                 const initial = displayName.charAt(0).toUpperCase();
-                const isCreator = membersBand?.created_by === m.user_id;
+                const isCreator = membersBand?.owner_id === m.user_id;
                 return (
                   <li key={m.id} className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-surface-mist/60 transition-colors">
                     <div className="w-9 h-9 rounded-full bg-surface-mist overflow-hidden flex items-center justify-center shrink-0">
@@ -279,7 +281,7 @@ export default function BandsPage() {
                         {isCreator && (
                           <span className="text-[10px] font-mono px-1.5 py-0.5 rounded-full bg-chlorophyll/10 text-chlorophyll-dark border border-chlorophyll/20">Owner</span>
                         )}
-                        {m.is_admin && !isCreator && (
+                        {m.role === "admin" && !isCreator && (
                           <span className="text-[10px] font-mono px-1.5 py-0.5 rounded-full bg-primary-container/30 text-primary">Admin</span>
                         )}
                       </div>
@@ -291,10 +293,10 @@ export default function BandsPage() {
                         <button
                           onClick={() => handleToggleAdmin(m)}
                           className="p-1.5 hover:bg-surface-mist rounded-lg text-on-surface-variant hover:text-primary transition-colors"
-                          title={m.is_admin ? "Remove admin" : "Make admin"}
+                          title={m.role === "admin" ? "Remove admin" : "Make admin"}
                         >
                           <span className="material-symbols-outlined" style={{ fontSize: "16px" }}>
-                            {m.is_admin ? "shield_with_heart" : "shield_person"}
+                            {m.role === "admin" ? "shield_with_heart" : "shield_person"}
                           </span>
                         </button>
                       )}
