@@ -1,13 +1,11 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { createClient } from "@/lib/supabase/client";
 
 type ArtistRow = {
   id: string;
-  name: string | null;
+  full_name: string | null;
   username: string | null;
-  email: string | null;
   display_picture: string | null;
   created_at: string;
   band_count: number;
@@ -18,27 +16,11 @@ export default function ArtistsPage() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
 
-  const supabase = createClient();
-
   const fetchArtists = useCallback(async () => {
     setLoading(true);
-
-    const [{ data: profiles }, { data: memberships }] = await Promise.all([
-      supabase
-        .from("profiles")
-        .select("id, name, username, email, display_picture, created_at")
-        .order("created_at", { ascending: false }),
-      supabase.from("band_members").select("user_id"),
-    ]);
-
-    const bandCountMap: Record<string, number> = {};
-    for (const m of memberships ?? []) {
-      bandCountMap[m.user_id] = (bandCountMap[m.user_id] ?? 0) + 1;
-    }
-
-    setArtists(
-      (profiles ?? []).map((p) => ({ ...p, band_count: bandCountMap[p.id] ?? 0 }))
-    );
+    const res = await fetch("/api/admin/artists");
+    const json = await res.json();
+    setArtists(json.artists ?? []);
     setLoading(false);
   }, []);
 
@@ -47,9 +29,8 @@ export default function ArtistsPage() {
   const filtered = artists.filter((a) => {
     const q = search.toLowerCase();
     return (
-      (a.name ?? "").toLowerCase().includes(q) ||
-      (a.username ?? "").toLowerCase().includes(q) ||
-      (a.email ?? "").toLowerCase().includes(q)
+      (a.full_name ?? "").toLowerCase().includes(q) ||
+      (a.username ?? "").toLowerCase().includes(q)
     );
   });
 
@@ -70,7 +51,7 @@ export default function ArtistsPage() {
         <div className="p-4 border-b border-outline-variant/40">
           <input
             className="input-field max-w-xs"
-            placeholder="Search by name, username, or email…"
+            placeholder="Search by name or username…"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
@@ -85,14 +66,14 @@ export default function ArtistsPage() {
             <table className="w-full">
               <thead>
                 <tr>
-                  {["Artist", "Email", "Joined", "Bands"].map((h) => (
+                  {["Artist", "Joined", "Bands"].map((h) => (
                     <th key={h} className="table-header">{h}</th>
                   ))}
                 </tr>
               </thead>
               <tbody>
                 {filtered.map((artist, i) => {
-                  const displayName = artist.name || artist.username || "—";
+                  const displayName = artist.full_name || artist.username || "—";
                   const initial = displayName.charAt(0).toUpperCase();
 
                   return (
@@ -116,15 +97,12 @@ export default function ArtistsPage() {
                             )}
                           </div>
                           <div>
-                            <p className="font-semibold text-sm text-obsidian">{artist.name || "—"}</p>
+                            <p className="font-semibold text-sm text-obsidian">{artist.full_name || "—"}</p>
                             <p className="text-xs text-on-surface-variant font-mono">
                               {artist.username ? `@${artist.username}` : "no username"}
                             </p>
                           </div>
                         </div>
-                      </td>
-                      <td className="table-cell text-sm text-on-surface-variant">
-                        {artist.email ?? "—"}
                       </td>
                       <td className="table-cell font-mono text-xs text-on-surface-variant">
                         {new Date(artist.created_at).toLocaleDateString("en-US", {
