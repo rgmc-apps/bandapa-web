@@ -16,6 +16,7 @@ COPY . .
 ENV NEXT_PUBLIC_SUPABASE_URL=https://rrfelwwoypouqcjbdzrb.supabase.co
 ENV NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJyZmVsd3dveXBvdXFjamJkenJiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkyMDAxMTMsImV4cCI6MjA5NDc3NjExM30.zR53IJTlEkK0LFMvsMlqP-EZXlc8RRUBgL3wmce_yZ4
 ENV NEXT_PUBLIC_APK_DOWNLOAD_URL=https://rrfelwwoypouqcjbdzrb.supabase.co/storage/v1/object/public/releases/bandapa-latest.apk
+ENV NEXT_PUBLIC_SITE_URL=https://bandapa-web-953816367167.asia-southeast1.run.app
 ENV NEXT_TELEMETRY_DISABLED=1
 
 RUN npm run build
