@@ -18,6 +18,16 @@ function GoogleIcon() {
   );
 }
 
+function applyRemember(remember: boolean) {
+  if (remember) {
+    localStorage.setItem("bandapa_remember", "true");
+    sessionStorage.removeItem("bandapa_session");
+  } else {
+    localStorage.setItem("bandapa_remember", "false");
+    sessionStorage.setItem("bandapa_session", "1");
+  }
+}
+
 function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -25,6 +35,7 @@ function LoginForm() {
 
   const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
+  const [remember, setRemember] = useState(true);
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
   const [error, setError] = useState("");
@@ -35,6 +46,9 @@ function LoginForm() {
     if (googleLoading) return;
     setGoogleLoading(true);
     setError("");
+
+    // Persist the preference so SessionGuard can apply it after the OAuth redirect
+    localStorage.setItem("bandapa_remember_pending", remember ? "true" : "false");
 
     const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? window.location.origin;
     const redirectTo = next
@@ -78,6 +92,7 @@ function LoginForm() {
       return;
     }
 
+    applyRemember(remember);
     router.push(next || "/auth/redirect");
   }
 
@@ -143,6 +158,33 @@ function LoginForm() {
                 className="w-full bg-white/[0.08] border border-white/15 rounded-lg px-4 py-3 text-sm text-white placeholder-white/25 focus:outline-none focus:border-chlorophyll focus:ring-2 focus:ring-chlorophyll/20 transition-all spring-input"
               />
             </div>
+
+            {/* Keep me signed in */}
+            <label className="flex items-center gap-3 cursor-pointer select-none group">
+              <button
+                type="button"
+                role="checkbox"
+                aria-checked={remember}
+                onClick={() => setRemember((v) => !v)}
+                className={`w-[18px] h-[18px] rounded-[5px] border flex items-center justify-center shrink-0 transition-all duration-150 ${
+                  remember
+                    ? "bg-chlorophyll border-chlorophyll"
+                    : "bg-transparent border-white/25 group-hover:border-white/40"
+                }`}
+              >
+                {remember && (
+                  <span
+                    className="material-symbols-outlined text-obsidian"
+                    style={{ fontSize: "13px", fontVariationSettings: "'FILL' 1, 'wght' 700" }}
+                  >
+                    check
+                  </span>
+                )}
+              </button>
+              <span className="text-sm text-white/50 group-hover:text-white/70 transition-colors">
+                Keep me signed in
+              </span>
+            </label>
 
             {error && (
               <div className="flex items-center gap-2.5 bg-error-container/50 border border-error-container rounded-lg px-4 py-3 text-on-error-container text-sm">

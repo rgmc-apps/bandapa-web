@@ -13,6 +13,8 @@ export default function SignOutButton({ className }: SignOutButtonProps) {
 
   async function handleSignOut() {
     await supabase.auth.signOut();
+    localStorage.removeItem("bandapa_remember");
+    sessionStorage.removeItem("bandapa_session");
     router.push("/login");
   }
 

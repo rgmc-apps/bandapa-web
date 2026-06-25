@@ -28,11 +28,15 @@ type ViewMode = "month" | "week" | "day";
 type EventColor = typeof PERSONAL_COLOR;
 
 type EventForm = {
-  title: string; is_all_day: boolean; start_time: string; end_time: string;
+  title: string; is_all_day: boolean;
+  start_date: string; end_date: string;
+  start_time: string; end_time: string;
   band_id: string; venue_id: string; location: string; description: string;
 };
 const emptyForm: EventForm = {
-  title: "", is_all_day: false, start_time: "18:00", end_time: "20:00",
+  title: "", is_all_day: false,
+  start_date: "", end_date: "",
+  start_time: "18:00", end_time: "20:00",
   band_id: "", venue_id: "", location: "", description: "",
 };
 
@@ -174,8 +178,12 @@ export default function CalendarPage() {
   const eventsByDay = useMemo(() => {
     const map = new Map<string, Event[]>();
     for (const e of events) {
-      const key = toDateKey(new Date(e.start_time));
-      map.set(key, [...(map.get(key) ?? []), e]);
+      const startDay = new Date(e.start_time); startDay.setHours(0, 0, 0, 0);
+      const endDay   = new Date(e.end_time);   endDay.setHours(0, 0, 0, 0);
+      for (let d = new Date(startDay); d <= endDay; d.setDate(d.getDate() + 1)) {
+        const key = toDateKey(new Date(d));
+        map.set(key, [...(map.get(key) ?? []), e]);
+      }
     }
     return map;
   }, [events]);
@@ -190,20 +198,28 @@ export default function CalendarPage() {
   function getDayEvents(date: Date) { return eventsByDay.get(toDateKey(date)) ?? []; }
 
   // ── Create event ─────────────────────────────────────────────────────────────
-  function openAdd() { setForm({ ...emptyForm }); setError(""); setAddOpen(true); }
+  function openAdd() {
+    const dateKey = toDateKey(selectedDate);
+    setForm({ ...emptyForm, start_date: dateKey, end_date: dateKey });
+    setError(""); setAddOpen(true);
+  }
 
   async function handleCreateEvent() {
     if (!form.title.trim() || !userId) return;
     setSaving(true); setError("");
-    const dateKey = toDateKey(selectedDate);
-    const start = form.is_all_day ? `${dateKey}T00:00:00` : `${dateKey}T${form.start_time}:00`;
-    const end = form.is_all_day ? `${dateKey}T23:59:59` : `${dateKey}T${form.end_time}:00`;
-    if (!form.is_all_day && form.end_time <= form.start_time) { setError("End time must be after start time."); setSaving(false); return; }
+    if (!form.start_date || !form.end_date) { setError("Please select a date."); setSaving(false); return; }
+    if (form.end_date < form.start_date) { setError("End date must be on or after start date."); setSaving(false); return; }
+    if (!form.is_all_day && form.start_date === form.end_date && form.end_time <= form.start_time) {
+      setError("End time must be after start time."); setSaving(false); return;
+    }
+    const start = form.is_all_day ? `${form.start_date}T00:00:00` : `${form.start_date}T${form.start_time}:00`;
+    const end   = form.is_all_day ? `${form.end_date}T23:59:59`   : `${form.end_date}T${form.end_time}:00`;
+    const isMultiDay = form.start_date !== form.end_date;
     const { data: created, error: err } = await supabase.from("events").insert({
       title: form.title.trim(), event_type: form.band_id ? "band_rehearsal" : "personal",
       owner_id: userId, band_id: form.band_id || null, venue_id: form.venue_id || null,
       start_time: new Date(start).toISOString(), end_time: new Date(end).toISOString(),
-      is_all_day: form.is_all_day, location: form.location || null, description: form.description || null,
+      is_all_day: form.is_all_day || isMultiDay, location: form.location || null, description: form.description || null,
     }).select("*").single();
     if (err || !created) { setError(err?.message ?? "Failed to create event."); setSaving(false); return; }
     if (!form.band_id) await detectAndReportConflicts(supabase, userId, created as Event);
@@ -464,22 +480,84 @@ export default function CalendarPage() {
             <label className="label-field">Title *</label>
             <input className="input-field" value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} placeholder="Rehearsal, gig, hangout…" />
           </div>
-          <label className="flex items-center gap-2 text-sm text-obsidian">
-            <input type="checkbox" checked={form.is_all_day} onChange={(e) => setForm({ ...form, is_all_day: e.target.checked })} />
-            All day
-          </label>
-          {!form.is_all_day && (
+
+          {/* Date range */}
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <label className="label-field mb-0">Date</label>
+              {form.start_date && form.end_date && form.start_date !== form.end_date && (() => {
+                const days = Math.round((new Date(form.end_date).getTime() - new Date(form.start_date).getTime()) / 86400000) + 1;
+                return (
+                  <span className="text-xs font-mono text-primary bg-primary/8 px-2 py-0.5 rounded-full">
+                    {days} days
+                  </span>
+                );
+              })()}
+            </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="label-field">Start</label>
-                <input type="time" className="input-field" value={form.start_time} onChange={(e) => setForm({ ...form, start_time: e.target.value })} />
+                <label className="block text-[11px] font-mono text-on-surface-variant mb-1">Start</label>
+                <input
+                  type="date"
+                  className="input-field"
+                  value={form.start_date}
+                  onChange={(e) => {
+                    const d = e.target.value;
+                    setForm((f) => ({ ...f, start_date: d, end_date: f.end_date < d ? d : f.end_date }));
+                  }}
+                />
               </div>
               <div>
-                <label className="label-field">End</label>
-                <input type="time" className="input-field" value={form.end_time} onChange={(e) => setForm({ ...form, end_time: e.target.value })} />
+                <label className="block text-[11px] font-mono text-on-surface-variant mb-1">End</label>
+                <input
+                  type="date"
+                  className="input-field"
+                  value={form.end_date}
+                  min={form.start_date}
+                  onChange={(e) => setForm({ ...form, end_date: e.target.value })}
+                />
               </div>
             </div>
-          )}
+          </div>
+
+          {/* All day + times */}
+          <div className="space-y-3">
+            <label className="flex items-center gap-2.5 cursor-pointer select-none group">
+              <div
+                onClick={() => setForm((f) => ({ ...f, is_all_day: !f.is_all_day }))}
+                className={`w-[18px] h-[18px] rounded-[5px] border flex items-center justify-center shrink-0 transition-all duration-150 cursor-pointer ${
+                  form.is_all_day
+                    ? "bg-primary border-primary"
+                    : "bg-transparent border-outline-variant group-hover:border-primary/50"
+                }`}
+              >
+                {form.is_all_day && (
+                  <span className="material-symbols-outlined text-white" style={{ fontSize: "13px", fontVariationSettings: "'FILL' 1, 'wght' 700" }}>
+                    check
+                  </span>
+                )}
+              </div>
+              <span className="text-sm text-obsidian group-hover:text-obsidian/80 transition-colors">All day</span>
+            </label>
+
+            {!form.is_all_day && (
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-[11px] font-mono text-on-surface-variant mb-1">
+                    {form.start_date !== form.end_date ? "Start time (day 1)" : "Start time"}
+                  </label>
+                  <input type="time" className="input-field" value={form.start_time} onChange={(e) => setForm({ ...form, start_time: e.target.value })} />
+                </div>
+                <div>
+                  <label className="block text-[11px] font-mono text-on-surface-variant mb-1">
+                    {form.start_date !== form.end_date ? "End time (last day)" : "End time"}
+                  </label>
+                  <input type="time" className="input-field" value={form.end_time} onChange={(e) => setForm({ ...form, end_time: e.target.value })} />
+                </div>
+              </div>
+            )}
+          </div>
+
           <div>
             <label className="label-field">Band (optional)</label>
             <select className="input-field" value={form.band_id} onChange={(e) => setForm({ ...form, band_id: e.target.value })}>

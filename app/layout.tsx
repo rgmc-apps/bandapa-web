@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import SessionGuard from "@/components/SessionGuard";
 
 export const metadata: Metadata = {
   title: "Bandapa",
@@ -28,7 +29,10 @@ export default function RootLayout({
           rel="stylesheet"
         />
       </head>
-      <body className="antialiased">{children}</body>
+      <body className="antialiased">
+        <SessionGuard />
+        {children}
+      </body>
     </html>
   );
 }

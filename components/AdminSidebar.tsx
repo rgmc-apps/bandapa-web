@@ -24,6 +24,8 @@ export default function AdminSidebar() {
   async function handleLogout() {
     const supabase = createClient();
     await supabase.auth.signOut();
+    localStorage.removeItem("bandapa_remember");
+    sessionStorage.removeItem("bandapa_session");
     router.push("/admin/login");
     router.refresh();
   }

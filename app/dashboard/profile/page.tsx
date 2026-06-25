@@ -140,6 +140,8 @@ export default function ProfilePage() {
 
   async function handleSignOut() {
     await supabase.auth.signOut();
+    localStorage.removeItem("bandapa_remember");
+    sessionStorage.removeItem("bandapa_session");
     router.push("/login");
   }
 

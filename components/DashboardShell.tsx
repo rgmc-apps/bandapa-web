@@ -26,6 +26,8 @@ export default function DashboardShell({ displayName, email, isAdmin, children }
   async function handleLogout() {
     const supabase = createClient();
     await supabase.auth.signOut();
+    localStorage.removeItem("bandapa_remember");
+    sessionStorage.removeItem("bandapa_session");
     router.push("/login");
     router.refresh();
   }
