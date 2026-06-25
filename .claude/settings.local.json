@@ -77,7 +77,8 @@
       "Bash(New-Item -Path \"C:\\\\claude\\\\bandapa-web\\\\app\\\\auth\\\\callback\\\\route.ts\" -ItemType File -Force)",
       "Bash(Out-Null)",
       "Bash(Write-Output \"created\")",
-      "PowerShell(New-Item *)"
+      "PowerShell(New-Item *)",
+      "mcp__supabase__list_edge_functions"
     ]
   },
   "enabledMcpjsonServers": [

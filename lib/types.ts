@@ -7,7 +7,7 @@ export interface Band {
   label: string | null;
   spotify_url: string | null;
   invite_code: string;
-  owner_id: string | null;
+  created_by: string;
   created_at: string;
   image_url: string | null;
   banner_url: string | null;

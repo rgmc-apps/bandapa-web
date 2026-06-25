@@ -3,6 +3,7 @@
 import { usePathname, useRouter } from "next/navigation";
 import Image from "next/image";
 import { createClient } from "@/lib/supabase/client";
+import NotificationBell from "@/components/NotificationBell";
 
 const navItems = [
   { href: "/dashboard", label: "Home", icon: "home", exact: true },
@@ -41,9 +42,12 @@ export default function DashboardShell({ displayName, email, isAdmin, children }
       {/* Desktop sidebar */}
       <aside className="hidden md:flex w-[260px] shrink-0 bg-obsidian-deep flex-col p-6 sidebar-scroll overflow-y-auto">
         <div className="mb-8 animate-fade-in">
-          <div className="flex items-center gap-3 mb-1">
-            <Image src="/static/app-logo.png" alt="Bandapa" width={36} height={36} className="object-contain" />
-            <span className="font-headline font-bold text-pure-white text-lg tracking-tight">Bandapa</span>
+          <div className="flex items-center justify-between mb-1">
+            <div className="flex items-center gap-3">
+              <Image src="/static/app-logo.png" alt="Bandapa" width={36} height={36} className="object-contain" />
+              <span className="font-headline font-bold text-pure-white text-lg tracking-tight">Bandapa</span>
+            </div>
+            <NotificationBell dark />
           </div>
           <p className="font-mono text-[11px] text-pure-white/45 tracking-wider truncate">{displayName}</p>
         </div>
@@ -99,7 +103,17 @@ export default function DashboardShell({ displayName, email, isAdmin, children }
       </aside>
 
       {/* Main content */}
-      <main className="flex-1 overflow-y-auto pb-20 md:pb-0">{children}</main>
+      <main className="flex-1 overflow-y-auto pb-20 md:pb-0">
+        {/* Mobile sticky header */}
+        <div className="md:hidden sticky top-0 z-30 flex items-center justify-between px-4 py-3 bg-background/95 backdrop-blur border-b border-outline-variant/50">
+          <div className="flex items-center gap-2">
+            <Image src="/static/app-logo.png" alt="Bandapa" width={28} height={28} className="object-contain" />
+            <span className="font-headline font-bold text-obsidian text-base tracking-tight">Bandapa</span>
+          </div>
+          <NotificationBell />
+        </div>
+        {children}
+      </main>
 
       {/* Mobile bottom tab bar */}
       <nav className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-obsidian-deep border-t border-white/10 flex items-stretch h-[64px]">

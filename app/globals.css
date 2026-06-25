@@ -34,6 +34,31 @@
   from { opacity: 0; transform: translateX(48px); }
   to   { opacity: 1; transform: translateX(0); }
 }
+@keyframes slideInFromRight {
+  from { transform: translateX(100%); }
+  to   { transform: translateX(0); }
+}
+.animate-slide-in-right { animation: slideInFromRight 0.28s cubic-bezier(0.16, 1, 0.3, 1) both; }
+
+/* Calendar view transitions */
+::view-transition-old(cal-grid) {
+  animation: calOut 0.22s cubic-bezier(0.4, 0, 1, 1) both;
+}
+::view-transition-new(cal-grid) {
+  animation: calIn 0.28s cubic-bezier(0, 0, 0.2, 1) both;
+}
+@keyframes calOut {
+  from { opacity: 1; transform: scale(1); }
+  to   { opacity: 0; transform: scale(0.97); }
+}
+@keyframes calIn {
+  from { opacity: 0; transform: scale(1.02); }
+  to   { opacity: 1; transform: scale(1); }
+}
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-old(cal-grid),
+  ::view-transition-new(cal-grid) { animation: none; }
+}
 
 @keyframes scaleIn {
   from { opacity: 0; transform: scale(0.94); }

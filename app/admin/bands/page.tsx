@@ -5,7 +5,7 @@ import { createClient } from "@/lib/supabase/client";
 import type { Band, BandMember, Profile } from "@/lib/types";
 import Modal from "@/components/Modal";
 
-type BandForm = Omit<Band, "id" | "created_at" | "invite_code" | "owner_id" | "image_url" | "banner_url">;
+type BandForm = Omit<Band, "id" | "created_at" | "invite_code" | "created_by" | "image_url" | "banner_url">;
 type MemberRow = BandMember & { user: Profile };
 
 const empty: BandForm = {
@@ -302,7 +302,7 @@ export default function BandsPage() {
               {members.map((m) => {
                 const displayName = m.user.full_name || m.user.username;
                 const initial = displayName.charAt(0).toUpperCase();
-                const isCreator = membersBand?.owner_id === m.user_id;
+                const isCreator = membersBand?.created_by === m.user_id;
                 return (
                   <li key={m.id} className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-surface-mist/60 transition-colors">
                     <div className="w-9 h-9 rounded-full bg-surface-mist overflow-hidden flex items-center justify-center shrink-0">

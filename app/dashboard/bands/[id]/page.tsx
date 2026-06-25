@@ -82,7 +82,7 @@ export default function BandDetailPage() {
   }, [fetchData]);
 
   const myMembership = members.find((m) => m.user_id === currentUserId);
-  const isOwner = band?.owner_id === currentUserId;
+  const isOwner = band?.created_by === currentUserId;
   const isAdmin = isOwner || (myMembership?.is_admin ?? false);
 
   const displayName = band?.name ?? cached?.name ?? "";
@@ -437,12 +437,12 @@ export default function BandDetailPage() {
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
-                  {(m.is_admin || m.user_id === band?.owner_id) && (
+                  {(m.is_admin || m.user_id === band?.created_by) && (
                     <span className="text-xs font-mono px-2 py-0.5 rounded-full bg-primary-container/30 text-primary">
-                      {m.user_id === band?.owner_id ? "Owner" : "Admin"}
+                      {m.user_id === band?.created_by ? "Owner" : "Admin"}
                     </span>
                   )}
-                  {isAdmin && m.user_id !== currentUserId && m.user_id !== band?.owner_id && (
+                  {isAdmin && m.user_id !== currentUserId && m.user_id !== band?.created_by && (
                     <button
                       onClick={() => handleToggleAdmin(m)}
                       className="p-1.5 hover:bg-surface-mist rounded-lg text-on-surface-variant hover:text-primary transition-colors"
@@ -453,7 +453,7 @@ export default function BandDetailPage() {
                       </span>
                     </button>
                   )}
-                  {isAdmin && !m.is_admin && m.user_id !== currentUserId && m.user_id !== band?.owner_id && (
+                  {isAdmin && !m.is_admin && m.user_id !== currentUserId && m.user_id !== band?.created_by && (
                     <button
                       onClick={() => handleRemoveMember(m)}
                       className="p-1.5 hover:bg-error-container hover:text-on-error-container rounded-lg text-on-surface-variant transition-colors"

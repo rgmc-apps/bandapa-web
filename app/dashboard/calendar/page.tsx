@@ -13,16 +13,16 @@ const HOUR_HEIGHT = 56;
 const HOURS = Array.from({ length: 24 }, (_, i) => i);
 
 const BAND_COLORS = [
-  { accent: "#f59e0b", bg: "#fef9ee", text: "#78350f" },
-  { accent: "#8b5cf6", bg: "#f5f3ff", text: "#4c1d95" },
-  { accent: "#ec4899", bg: "#fdf2f8", text: "#831843" },
-  { accent: "#06b6d4", bg: "#ecfeff", text: "#164e63" },
-  { accent: "#ef4444", bg: "#fff5f5", text: "#7f1d1d" },
-  { accent: "#3b82f6", bg: "#eff6ff", text: "#1e3a8a" },
-  { accent: "#f97316", bg: "#fff7ed", text: "#7c2d12" },
-  { accent: "#a855f7", bg: "#faf5ff", text: "#581c87" },
+  { accent: "#ea580c", bg: "#fff7ed", text: "#7c2d12" },
+  { accent: "#7c3aed", bg: "#f5f3ff", text: "#3b0764" },
+  { accent: "#db2777", bg: "#fdf2f8", text: "#831843" },
+  { accent: "#0891b2", bg: "#ecfeff", text: "#164e63" },
+  { accent: "#dc2626", bg: "#fef2f2", text: "#7f1d1d" },
+  { accent: "#2563eb", bg: "#eff6ff", text: "#1e3a8a" },
+  { accent: "#d97706", bg: "#fffbeb", text: "#78350f" },
+  { accent: "#9333ea", bg: "#faf5ff", text: "#581c87" },
 ];
-const PERSONAL_COLOR = { accent: "#22c55e", bg: "#f0fdf4", text: "#14532d" };
+const PERSONAL_COLOR = { accent: "#16a34a", bg: "#f0fdf4", text: "#14532d" };
 
 type ViewMode = "month" | "week" | "day";
 type EventColor = typeof PERSONAL_COLOR;
@@ -93,6 +93,9 @@ export default function CalendarPage() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [detailEvent, setDetailEvent] = useState<Event | null>(null);
+  const [conflictWarnings, setConflictWarnings] = useState<Event[]>([]);
+  const [checkingConflicts, setCheckingConflicts] = useState(false);
+  const conflictTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const timeGridRef = useRef<HTMLDivElement>(null);
 
@@ -146,24 +149,93 @@ export default function CalendarPage() {
     }
   }, [viewMode]);
 
+  // ── Real-time conflict check while filling the form ───────────────────────────
+  useEffect(() => {
+    if (!addOpen || !form.start_date || !form.end_date) {
+      setConflictWarnings([]);
+      return;
+    }
+
+    if (conflictTimer.current) clearTimeout(conflictTimer.current);
+    conflictTimer.current = setTimeout(async () => {
+      const startISO = form.is_all_day
+        ? `${form.start_date}T00:00:00`
+        : `${form.start_date}T${form.start_time}:00`;
+      const endISO = form.is_all_day
+        ? `${form.end_date}T23:59:59`
+        : `${form.end_date}T${form.end_time}:00`;
+
+      if (new Date(endISO) <= new Date(startISO)) {
+        setConflictWarnings([]);
+        return;
+      }
+
+      setCheckingConflicts(true);
+
+      let data: Event[] | null = null;
+
+      if (form.band_id) {
+        // Band event: check for other events already booked for this band
+        const res = await supabase
+          .from("events")
+          .select("id, title, start_time, end_time, band_id, is_all_day")
+          .eq("band_id", form.band_id)
+          .lt("start_time", endISO)
+          .gt("end_time", startISO)
+          .limit(5);
+        data = res.data as Event[] | null;
+      } else if (bands.length > 0) {
+        // Personal event: check for band events the user is a member of
+        const res = await supabase
+          .from("events")
+          .select("id, title, start_time, end_time, band_id, is_all_day")
+          .not("band_id", "is", null)
+          .in("band_id", bands.map((b) => b.id))
+          .lt("start_time", endISO)
+          .gt("end_time", startISO)
+          .limit(5);
+        data = res.data as Event[] | null;
+      }
+
+      setConflictWarnings(data ?? []);
+      setCheckingConflicts(false);
+    }, 350);
+
+    return () => { if (conflictTimer.current) clearTimeout(conflictTimer.current); };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [form.start_date, form.end_date, form.start_time, form.end_time, form.is_all_day, form.band_id, addOpen]);
+
+  // ── View Transitions wrapper ─────────────────────────────────────────────────
+  function withVT(fn: () => void) {
+    const reduced = typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (typeof document === "undefined" || !("startViewTransition" in document) || reduced) { fn(); return; }
+    (document as Document & { startViewTransition: (cb: () => void) => void }).startViewTransition(fn);
+  }
+
   // ── Navigation ──────────────────────────────────────────────────────────────
   function prevPeriod() {
-    if (viewMode === "month") { const m = viewMonth === 0 ? 11 : viewMonth - 1; setViewMonth(m); setViewYear(viewMonth === 0 ? viewYear - 1 : viewYear); }
-    else if (viewMode === "week") setWeekStart(p => new Date(p.getTime() - 7 * 86400000));
-    else setSelectedDate(p => { const d = new Date(p); d.setDate(d.getDate() - 1); return d; });
+    withVT(() => {
+      if (viewMode === "month") { const m = viewMonth === 0 ? 11 : viewMonth - 1; setViewMonth(m); setViewYear(viewMonth === 0 ? viewYear - 1 : viewYear); }
+      else if (viewMode === "week") setWeekStart(p => new Date(p.getTime() - 7 * 86400000));
+      else setSelectedDate(p => { const d = new Date(p); d.setDate(d.getDate() - 1); return d; });
+    });
   }
   function nextPeriod() {
-    if (viewMode === "month") { const m = viewMonth === 11 ? 0 : viewMonth + 1; setViewMonth(m); setViewYear(viewMonth === 11 ? viewYear + 1 : viewYear); }
-    else if (viewMode === "week") setWeekStart(p => new Date(p.getTime() + 7 * 86400000));
-    else setSelectedDate(p => { const d = new Date(p); d.setDate(d.getDate() + 1); return d; });
+    withVT(() => {
+      if (viewMode === "month") { const m = viewMonth === 11 ? 0 : viewMonth + 1; setViewMonth(m); setViewYear(viewMonth === 11 ? viewYear + 1 : viewYear); }
+      else if (viewMode === "week") setWeekStart(p => new Date(p.getTime() + 7 * 86400000));
+      else setSelectedDate(p => { const d = new Date(p); d.setDate(d.getDate() + 1); return d; });
+    });
   }
   function goToday() {
     const t = new Date();
     setSelectedDate(t); setViewMonth(t.getMonth()); setViewYear(t.getFullYear()); setWeekStart(getWeekStart(t));
   }
   function switchView(mode: ViewMode) {
-    setViewMode(mode);
-    if (mode === "week") setWeekStart(getWeekStart(selectedDate));
+    withVT(() => {
+      setViewMode(mode);
+      if (mode === "week") setWeekStart(getWeekStart(selectedDate));
+    });
   }
   function getPeriodLabel() {
     if (viewMode === "month") return `${MONTH_NAMES[viewMonth]} ${viewYear}`;
@@ -201,7 +273,7 @@ export default function CalendarPage() {
   function openAdd() {
     const dateKey = toDateKey(selectedDate);
     setForm({ ...emptyForm, start_date: dateKey, end_date: dateKey });
-    setError(""); setAddOpen(true);
+    setError(""); setConflictWarnings([]); setAddOpen(true);
   }
 
   async function handleCreateEvent() {
@@ -255,7 +327,7 @@ export default function CalendarPage() {
           })}
         </div>
 
-        {/* All-day row (only if any) */}
+        {/* All-day row */}
         {days.some(d => getDayEvents(d).some(e => e.is_all_day)) && (
           <div className="flex border-b border-outline-variant/30 min-h-[28px]">
             <div className="w-14 shrink-0 flex items-center justify-end pr-2">
@@ -265,10 +337,11 @@ export default function CalendarPage() {
               <div key={i} className="flex-1 border-l border-outline-variant/20 p-1 space-y-0.5">
                 {getDayEvents(day).filter(e => e.is_all_day).map(ev => {
                   const c = getEventColor(ev);
+                  const isBand = !!ev.band_id;
                   return (
-                    <button key={ev.id} onClick={() => setDetailEvent(ev)}
-                      className="w-full text-left rounded px-1.5 py-0.5 text-xs font-medium truncate"
-                      style={{ background: c.bg, color: c.text, borderLeft: `3px solid ${c.accent}` }}>
+                    <button key={ev.id} onClick={(e) => { e.stopPropagation(); setDetailEvent(ev); }}
+                      className="w-full text-left rounded-md px-1.5 py-0.5 text-xs font-semibold truncate transition-[filter] hover:brightness-90"
+                      style={{ background: isBand ? c.accent : c.bg, color: isBand ? "#fff" : c.text }}>
                       {ev.title}
                     </button>
                   );
@@ -288,6 +361,12 @@ export default function CalendarPage() {
                   {h > 0 && <span className="text-[10px] font-mono text-on-surface-variant">{formatHour(h)}</span>}
                 </div>
               ))}
+              {/* Floating now time label */}
+              <div className="absolute w-full flex justify-end pr-2 z-20 pointer-events-none" style={{ top: `${nowTop - 9}px` }}>
+                <span className="text-[10px] font-mono font-bold text-red-500 bg-background px-0.5">
+                  {now.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" })}
+                </span>
+              </div>
             </div>
 
             {/* Day columns */}
@@ -295,7 +374,25 @@ export default function CalendarPage() {
               const isToday = toDateKey(day) === todayKey;
               const timedEvents = getDayEvents(day).filter(e => !e.is_all_day);
               return (
-                <div key={i} className={`flex-1 relative border-l border-outline-variant/20 ${isToday ? "bg-primary/[0.018]" : ""}`}>
+                <div
+                  key={i}
+                  className={`flex-1 relative border-l border-outline-variant/20 cursor-pointer ${isToday ? "bg-primary/[0.022]" : ""}`}
+                  onClick={(e) => {
+                    const rect = e.currentTarget.getBoundingClientRect();
+                    const scrollTop = timeGridRef.current?.scrollTop ?? 0;
+                    const yPx = e.clientY - rect.top + scrollTop;
+                    const hour = Math.max(0, Math.min(23, Math.floor(yPx / HOUR_HEIGHT)));
+                    const half = (yPx % HOUR_HEIGHT) >= HOUR_HEIGHT / 2;
+                    const sm = half ? 30 : 0;
+                    const eh = sm === 30 ? Math.min(23, hour + 1) : hour;
+                    const em = sm === 30 ? 0 : 30;
+                    const st = `${String(hour).padStart(2,"0")}:${String(sm).padStart(2,"0")}`;
+                    const et = `${String(eh).padStart(2,"0")}:${String(em).padStart(2,"0")}`;
+                    const dateKey = toDateKey(day);
+                    setForm({ ...emptyForm, start_date: dateKey, end_date: dateKey, start_time: st, end_time: et });
+                    setError(""); setConflictWarnings([]); setAddOpen(true);
+                  }}
+                >
                   {/* Hour lines */}
                   {HOURS.map(h => (
                     <div key={h} className={`absolute w-full border-t ${h % 6 === 0 ? "border-outline-variant/40" : "border-outline-variant/15"}`}
@@ -307,27 +404,47 @@ export default function CalendarPage() {
                       style={{ top: `${h * HOUR_HEIGHT + HOUR_HEIGHT / 2}px` }} />
                   ))}
 
-                  {/* Current time indicator */}
+                  {/* Floating now indicator */}
                   {isToday && (
-                    <div className="absolute w-full z-10 pointer-events-none flex items-center" style={{ top: `${nowTop}px` }}>
-                      <div className="w-2 h-2 rounded-full -ml-1 shrink-0" style={{ background: "#ef4444" }} />
-                      <div className="flex-1 h-px" style={{ background: "#ef4444" }} />
+                    <div className="absolute w-full z-10 pointer-events-none" style={{ top: `${nowTop}px` }}>
+                      <div className="flex items-center">
+                        <div className="w-2 h-2 rounded-full -ml-1 shrink-0 bg-red-500" />
+                        <div className="flex-1 h-px bg-red-500" />
+                      </div>
                     </div>
                   )}
 
                   {/* Events */}
                   {timedEvents.map(ev => {
                     const c = getEventColor(ev);
+                    const isBand = !!ev.band_id;
                     const top = eventTopPx(ev);
                     const height = eventHeightPx(ev);
                     return (
-                      <button key={ev.id} onClick={() => setDetailEvent(ev)}
-                        className="absolute left-0.5 right-0.5 rounded overflow-hidden text-left z-20 hover:brightness-95 transition-[filter]"
-                        style={{ top: `${top}px`, height: `${height}px`, background: c.bg, borderLeft: `3px solid ${c.accent}` }}>
-                        <div className="px-1.5 py-0.5">
-                          <p className="text-xs font-semibold leading-tight truncate" style={{ color: c.text }}>{ev.title}</p>
-                          {height > 34 && (
-                            <p className="text-[10px] font-mono leading-tight" style={{ color: c.accent }}>
+                      <button
+                        key={ev.id}
+                        onClick={(e) => { e.stopPropagation(); setDetailEvent(ev); }}
+                        className={`absolute left-0.5 right-0.5 overflow-hidden text-left z-20 transition-[filter,transform] hover:brightness-90 hover:scale-[1.01] ${isBand ? "rounded-lg" : "rounded-xl"}`}
+                        style={{
+                          top: `${top}px`,
+                          height: `${height}px`,
+                          background: isBand ? c.accent : c.bg,
+                          border: isBand ? "none" : `1.5px solid ${c.accent}35`,
+                        }}
+                      >
+                        <div className="px-1.5 pt-1 pb-0.5 h-full flex flex-col justify-start">
+                          {isBand && height > 26 && (
+                            <p className="text-[8px] font-mono text-white/65 truncate leading-none mb-0.5">
+                              {bandById.get(ev.band_id!)?.name ?? ""}
+                            </p>
+                          )}
+                          <p className={`text-xs font-semibold leading-tight truncate ${isBand ? "text-white" : ""}`}
+                            style={!isBand ? { color: c.text } : undefined}>
+                            {ev.title}
+                          </p>
+                          {height > 42 && (
+                            <p className={`text-[10px] font-mono mt-auto leading-none ${isBand ? "text-white/65" : ""}`}
+                              style={!isBand ? { color: c.accent } : undefined}>
                               {new Date(ev.start_time).toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" })}
                             </p>
                           )}
@@ -351,11 +468,15 @@ export default function CalendarPage() {
       <div className="flex items-center justify-between mb-5 flex-wrap gap-3">
         <h1 className="font-headline font-bold text-2xl text-obsidian">Calendar</h1>
         <div className="flex items-center gap-2">
-          <div className="flex rounded-lg border border-outline-variant overflow-hidden">
+          <div className="relative flex rounded-xl bg-surface-mist p-0.5">
+            <div
+              className="absolute top-0.5 bottom-0.5 rounded-lg bg-white shadow-sm pointer-events-none transition-transform duration-200"
+              style={{ width: "calc(100% / 3)", transform: `translateX(${["month","week","day"].indexOf(viewMode) * 100}%)` }}
+            />
             {(["month", "week", "day"] as ViewMode[]).map(v => (
               <button key={v} onClick={() => switchView(v)}
-                className={`px-3 py-1.5 text-xs font-medium capitalize transition-colors ${
-                  viewMode === v ? "bg-primary text-white" : "text-on-surface-variant hover:bg-surface-mist"
+                className={`relative z-10 flex-1 px-3 py-1.5 text-xs font-mono font-medium capitalize transition-colors rounded-lg ${
+                  viewMode === v ? "text-obsidian" : "text-on-surface-variant hover:text-obsidian"
                 }`}>
                 {v}
               </button>
@@ -387,31 +508,54 @@ export default function CalendarPage() {
       {/* Month view */}
       {viewMode === "month" && (
         <>
-          <div className="card p-5 mb-6">
+          <div className="card p-4 mb-5" style={{ viewTransitionName: "cal-grid" }}>
             <div className="grid grid-cols-7 gap-1 mb-1">
               {WEEKDAY_LABELS.map((d, i) => (
                 <div key={i} className="text-center text-xs font-mono text-on-surface-variant py-1">{d}</div>
               ))}
             </div>
-            <div className="grid grid-cols-7 gap-1">
+            <div className="grid grid-cols-7 gap-0.5">
               {cells.map((date, i) => {
-                if (!date) return <div key={i} />;
+                if (!date) return <div key={i} className="min-h-[56px]" />;
                 const key = toDateKey(date);
                 const dayEvs = eventsByDay.get(key) ?? [];
                 const isSelected = toDateKey(selectedDate) === key;
                 const isToday = todayKey === key;
                 return (
                   <button key={i} onClick={() => setSelectedDate(date)}
-                    className={`relative aspect-square rounded-lg flex flex-col items-center pt-1 pb-1 text-sm transition-colors ${
-                      isSelected ? "bg-chlorophyll text-obsidian font-semibold" : isToday ? "bg-surface-mist text-primary font-semibold" : "text-obsidian hover:bg-surface-mist"
+                    className={`relative min-h-[56px] rounded-xl flex flex-col p-1.5 text-left transition-all duration-150 ${
+                      isSelected
+                        ? "bg-chlorophyll shadow-sm"
+                        : isToday
+                        ? "bg-primary/8 ring-1 ring-primary/20"
+                        : "hover:bg-surface-mist/80"
                     }`}>
-                    {date.getDate()}
+                    <span className={`font-mono text-xs leading-none mb-1.5 ${
+                      isSelected ? "font-bold text-obsidian" : isToday ? "font-bold text-primary" : "text-obsidian"
+                    }`}>{date.getDate()}</span>
                     {dayEvs.length > 0 && (
-                      <div className="flex gap-0.5 mt-auto flex-wrap justify-center px-0.5">
-                        {dayEvs.slice(0, 4).map(ev => {
+                      <div className="w-full space-y-px min-w-0">
+                        {dayEvs.slice(0, 2).map(ev => {
                           const c = getEventColor(ev);
-                          return <span key={ev.id} className="w-1.5 h-1.5 rounded-full" style={{ background: isSelected ? "#1a1a1a" : c.accent }} />;
+                          const isBand = !!ev.band_id;
+                          return (
+                            <div key={ev.id}
+                              className="w-full rounded text-[8px] font-mono px-1 py-px leading-none truncate"
+                              style={{
+                                background: isSelected
+                                  ? "rgba(0,0,0,0.12)"
+                                  : isBand ? `${c.accent}22` : `${PERSONAL_COLOR.accent}1a`,
+                                color: isSelected ? "#1a1a1a" : isBand ? c.text : PERSONAL_COLOR.text,
+                              }}>
+                              {ev.title}
+                            </div>
+                          );
                         })}
+                        {dayEvs.length > 2 && (
+                          <span className={`text-[8px] font-mono pl-1 ${isSelected ? "text-obsidian/60" : "text-on-surface-variant/50"}`}>
+                            +{dayEvs.length - 2}
+                          </span>
+                        )}
                       </div>
                     )}
                   </button>
@@ -429,17 +573,20 @@ export default function CalendarPage() {
             <div className="space-y-2">
               {getDayEvents(selectedDate).map(e => {
                 const c = getEventColor(e);
+                const isBand = !!e.band_id;
                 return (
                   <button key={e.id} onClick={() => setDetailEvent(e)}
-                    className="w-full card p-4 flex items-center gap-3 text-left hover:bg-surface-mist/40 transition-colors">
-                    <span className="w-1.5 self-stretch rounded-full" style={{ background: c.accent }} />
+                    className="w-full rounded-xl p-3.5 flex items-center gap-3 text-left transition-all duration-150 hover:brightness-95"
+                    style={{ background: `${c.accent}10`, border: `1px solid ${c.accent}25` }}>
+                    <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: c.accent }} />
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-obsidian truncate">{e.title}</p>
-                      <p className="text-xs text-on-surface-variant">
+                      <p className="text-sm font-semibold text-obsidian truncate">{e.title}</p>
+                      <p className="text-xs text-on-surface-variant mt-0.5">
                         {e.is_all_day ? "All day" : `${new Date(e.start_time).toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" })} – ${new Date(e.end_time).toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" })}`}
-                        {e.band_id && bandById.get(e.band_id) ? ` · ${bandById.get(e.band_id)!.name}` : ""}
+                        {isBand && bandById.get(e.band_id!) ? ` · ${bandById.get(e.band_id!)!.name}` : ""}
                       </p>
                     </div>
+                    <span className="material-symbols-outlined text-on-surface-variant/40 shrink-0" style={{ fontSize: "16px" }}>chevron_right</span>
                   </button>
                 );
               })}
@@ -449,10 +596,10 @@ export default function CalendarPage() {
       )}
 
       {/* Week view */}
-      {viewMode === "week" && renderTimeGrid(weekDays)}
+      {viewMode === "week" && <div style={{ viewTransitionName: "cal-grid" }}>{renderTimeGrid(weekDays)}</div>}
 
       {/* Day view */}
-      {viewMode === "day" && renderTimeGrid([selectedDate])}
+      {viewMode === "day" && <div style={{ viewTransitionName: "cal-grid" }}>{renderTimeGrid([selectedDate])}</div>}
 
       {/* Band legend */}
       {bands.length > 0 && (
@@ -580,11 +727,59 @@ export default function CalendarPage() {
             <label className="label-field">Description</label>
             <textarea className="input-field min-h-[64px] resize-y" value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} />
           </div>
+          {/* Conflict warnings */}
+          {checkingConflicts && (
+            <div className="flex items-center gap-2 text-xs text-on-surface-variant">
+              <span className="w-3 h-3 rounded-full border-2 border-primary border-t-transparent animate-spin shrink-0" />
+              Checking for conflicts…
+            </div>
+          )}
+          {!checkingConflicts && conflictWarnings.length > 0 && (
+            <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 space-y-2">
+              <div className="flex items-center gap-2">
+                <span className="material-symbols-outlined text-amber-600 shrink-0" style={{ fontSize: "18px" }}>warning</span>
+                <p className="text-sm font-semibold text-amber-800">
+                  {conflictWarnings.length === 1
+                    ? "Schedule conflict detected"
+                    : `${conflictWarnings.length} schedule conflicts detected`}
+                </p>
+              </div>
+              <div className="space-y-1.5 pl-1">
+                {conflictWarnings.map((w) => (
+                  <div key={w.id} className="flex items-start gap-1.5 text-xs text-amber-700">
+                    <span className="shrink-0 mt-0.5">·</span>
+                    <span>
+                      <span className="font-semibold">{w.title}</span>
+                      {w.band_id && bandById.get(w.band_id) && (
+                        <span className="font-normal"> · {bandById.get(w.band_id)!.name}</span>
+                      )}
+                      <span className="font-normal text-amber-600">
+                        {" — "}
+                        {w.is_all_day
+                          ? "All day"
+                          : `${new Date(w.start_time).toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" })} – ${new Date(w.end_time).toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" })}`}
+                      </span>
+                    </span>
+                  </div>
+                ))}
+              </div>
+              <p className="text-[11px] text-amber-600 pt-0.5">
+                {form.band_id
+                  ? "This band already has an event at this time. You can still save."
+                  : "Your personal event overlaps with band schedule. A conflict will be recorded on save."}
+              </p>
+            </div>
+          )}
+
           {error && <p className="text-error text-sm">{error}</p>}
           <div className="flex justify-end gap-3 pt-2">
             <button className="btn-secondary" onClick={() => setAddOpen(false)}>Cancel</button>
-            <button className="btn-primary" onClick={handleCreateEvent} disabled={saving || !form.title.trim()}>
-              {saving ? "Saving…" : "Add Event"}
+            <button
+              className={conflictWarnings.length > 0 ? "btn-danger" : "btn-primary"}
+              onClick={handleCreateEvent}
+              disabled={saving || !form.title.trim()}
+            >
+              {saving ? "Saving…" : conflictWarnings.length > 0 ? "Save Anyway" : "Add Event"}
             </button>
           </div>
         </div>
