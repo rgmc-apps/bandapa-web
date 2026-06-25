@@ -205,9 +205,10 @@ export default function BandDetailPage() {
 
   function handleShare() {
     if (!band) return;
-    const url = window.location.href;
+    const origin = process.env.NEXT_PUBLIC_SITE_URL ?? window.location.origin;
+    const url = `${origin}/invite/${band.invite_code}`;
     if (navigator.share) {
-      navigator.share({ title: band.name, text: `Check out ${band.name} on Bandapa`, url });
+      navigator.share({ title: band.name, text: `Join ${band.name} on Bandapa`, url });
     } else {
       navigator.clipboard.writeText(url);
       setCopiedShare(true);
