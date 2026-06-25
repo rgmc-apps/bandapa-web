@@ -9,6 +9,19 @@ export const metadata = {
   title: "Bandapa | Band Management Platform",
   description:
     "The web platform for serious musicians. Manage your band, schedule rehearsals, resolve conflicts, and find venues — all in one place.",
+  openGraph: {
+    title: "Bandapa | Band Management Platform",
+    description:
+      "The web platform for serious musicians. Manage your band, schedule rehearsals, resolve conflicts, and find venues — all in one place.",
+    type: "website",
+    siteName: "Bandapa",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Bandapa | Band Management Platform",
+    description:
+      "The web platform for serious musicians. Manage your band, schedule rehearsals, resolve conflicts, and find venues — all in one place.",
+  },
 };
 
 export default async function IndexPage() {
