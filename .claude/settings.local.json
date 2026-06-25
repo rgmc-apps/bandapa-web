@@ -71,7 +71,9 @@
       "mcp__supabase__list_storage_buckets",
       "Bash(Get-ChildItem -Recurse -File \"C:\\\\claude\\\\bandapa-web\\\\src\")",
       "Bash(Select-Object -First 50 FullName)",
-      "Bash(kill %1)"
+      "Bash(kill %1)",
+      "Bash(Get-ChildItem -Recurse -Path \"C:\\\\claude\\\\bandapa-web\\\\app\" -Name)",
+      "Bash(Sort-Object)"
     ]
   },
   "enabledMcpjsonServers": [

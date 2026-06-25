@@ -34,7 +34,9 @@ export default function AuthConfirmContent() {
           setErrorMessage(error.message);
         } else {
           setStatus("success");
-          setTimeout(() => router.push("/download"), 3000);
+          const next = searchParams.get("next");
+          const dest = next && next.startsWith("/") ? next : "/download";
+          setTimeout(() => router.push(dest), 3000);
         }
       });
   }, [searchParams, router]);

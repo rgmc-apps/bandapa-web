@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { Suspense, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import Image from "next/image";
 import Link from "next/link";
@@ -18,8 +18,11 @@ function GoogleIcon() {
   );
 }
 
-export default function LoginPage() {
+function LoginForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const next = searchParams.get("next") ?? "";
+
   const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -33,13 +36,14 @@ export default function LoginPage() {
     setGoogleLoading(true);
     setError("");
 
+    const redirectTo = next
+      ? `${window.location.origin}/auth/redirect?next=${encodeURIComponent(next)}`
+      : `${window.location.origin}/auth/redirect`;
+
     await supabase.auth.signInWithOAuth({
       provider: "google",
-      options: {
-        redirectTo: `${window.location.origin}/auth/callback`,
-      },
+      options: { redirectTo },
     });
-    // Browser redirects to Google — no further code runs here
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -62,7 +66,10 @@ export default function LoginPage() {
       email = resolvedEmail as string;
     }
 
-    const { error: signInError } = await supabase.auth.signInWithPassword({ email, password });
+    const { error: signInError } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
 
     if (signInError) {
       setError(signInError.message);
@@ -70,7 +77,7 @@ export default function LoginPage() {
       return;
     }
 
-    router.push("/auth/redirect");
+    router.push(next || "/auth/redirect");
   }
 
   return (
@@ -87,7 +94,6 @@ export default function LoginPage() {
         </div>
 
         <div className="bg-white/5 border border-white/10 rounded-2xl p-7 backdrop-blur-sm">
-          {/* Google sign-in */}
           <button
             type="button"
             onClick={handleGoogleSignIn}
@@ -102,14 +108,12 @@ export default function LoginPage() {
             Continue with Google
           </button>
 
-          {/* Divider */}
           <div className="flex items-center gap-3 mb-5">
             <div className="flex-1 h-px bg-white/10" />
             <span className="text-white/30 text-xs font-mono">or</span>
             <div className="flex-1 h-px bg-white/10" />
           </div>
 
-          {/* Email / password form */}
           <form onSubmit={handleSubmit} className="space-y-5">
             <div>
               <label className="block text-xs font-mono font-medium tracking-wider text-white/50 mb-2 uppercase">
@@ -165,11 +169,26 @@ export default function LoginPage() {
 
         <p className="text-center text-white/40 text-sm mt-6">
           Don&apos;t have an account?{" "}
-          <Link href="/register" className="text-chlorophyll hover:text-chlorophyll/80 font-medium transition-colors">
+          <Link
+            href={next ? `/register?next=${encodeURIComponent(next)}` : "/register"}
+            className="text-chlorophyll hover:text-chlorophyll/80 font-medium transition-colors"
+          >
             Create one
           </Link>
         </p>
       </div>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-[#0F1509] flex items-center justify-center">
+        <div className="w-8 h-8 rounded-full border-2 border-chlorophyll border-t-transparent animate-spin" />
+      </div>
+    }>
+      <LoginForm />
+    </Suspense>
   );
 }

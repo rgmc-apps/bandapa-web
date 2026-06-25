@@ -12,6 +12,7 @@ export interface Band {
   image_url: string | null;
   banner_url: string | null;
   social_links: Record<string, string>;
+  is_public: boolean;
 }
 
 export interface Artist {

@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import Image from "next/image";
 import Link from "next/link";
@@ -17,7 +18,10 @@ function GoogleIcon() {
   );
 }
 
-export default function RegisterPage() {
+function RegisterForm() {
+  const searchParams = useSearchParams();
+  const next = searchParams.get("next") ?? "";
+
   const [email, setEmail] = useState("");
   const [username, setUsername] = useState("");
   const [fullName, setFullName] = useState("");
@@ -35,11 +39,13 @@ export default function RegisterPage() {
     setGoogleLoading(true);
     setError("");
 
+    const redirectTo = next
+      ? `${window.location.origin}/auth/redirect?next=${encodeURIComponent(next)}`
+      : `${window.location.origin}/auth/redirect`;
+
     await supabase.auth.signInWithOAuth({
       provider: "google",
-      options: {
-        redirectTo: `${window.location.origin}/auth/callback`,
-      },
+      options: { redirectTo },
     });
   }
 
@@ -63,11 +69,16 @@ export default function RegisterPage() {
     setLoading(true);
     setError("");
 
+    const confirmBase = `${process.env.NEXT_PUBLIC_SITE_URL}/auth/confirm`;
+    const emailRedirectTo = next
+      ? `${confirmBase}?next=${encodeURIComponent(next)}`
+      : confirmBase;
+
     const { error: signUpError } = await supabase.auth.signUp({
       email,
       password,
       options: {
-        emailRedirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/auth/confirm`,
+        emailRedirectTo,
         data: {
           username: username.toLowerCase(),
           full_name: fullName || null,
@@ -98,13 +109,18 @@ export default function RegisterPage() {
             </span>
           </div>
           <h2 className="font-headline font-bold text-white text-2xl mb-3">Check your inbox</h2>
-          <p className="text-white/50 text-sm leading-relaxed mb-8">
+          <p className="text-white/50 text-sm leading-relaxed mb-2">
             We sent a confirmation link to{" "}
             <span className="text-white/80 font-mono">{email}</span>.
-            Open it to activate your account.
           </p>
+          {next && (
+            <p className="text-white/35 text-xs font-mono mb-8">
+              After confirming, you&apos;ll be redirected back to your invitation.
+            </p>
+          )}
+          {!next && <div className="mb-8" />}
           <Link
-            href="/login"
+            href={next ? `/login?next=${encodeURIComponent(next)}` : "/login"}
             className="inline-flex items-center gap-2 text-chlorophyll font-mono text-sm hover:text-chlorophyll/80 transition-colors"
           >
             <span className="material-symbols-outlined" style={{ fontSize: "16px" }}>arrow_back</span>
@@ -129,7 +145,6 @@ export default function RegisterPage() {
         </div>
 
         <div className="bg-white/5 border border-white/10 rounded-2xl p-7 backdrop-blur-sm">
-          {/* Google sign-up */}
           <button
             type="button"
             onClick={handleGoogleSignIn}
@@ -144,14 +159,12 @@ export default function RegisterPage() {
             Continue with Google
           </button>
 
-          {/* Divider */}
           <div className="flex items-center gap-3 mb-5">
             <div className="flex-1 h-px bg-white/10" />
             <span className="text-white/30 text-xs font-mono">or</span>
             <div className="flex-1 h-px bg-white/10" />
           </div>
 
-          {/* Email / password form */}
           <form onSubmit={handleSubmit} className="space-y-5">
             <div>
               <label className="block text-xs font-mono font-medium tracking-wider text-white/50 mb-2 uppercase">
@@ -248,11 +261,26 @@ export default function RegisterPage() {
 
         <p className="text-center text-white/40 text-sm mt-6">
           Already have an account?{" "}
-          <Link href="/login" className="text-chlorophyll hover:text-chlorophyll/80 font-medium transition-colors">
+          <Link
+            href={next ? `/login?next=${encodeURIComponent(next)}` : "/login"}
+            className="text-chlorophyll hover:text-chlorophyll/80 font-medium transition-colors"
+          >
             Sign in
           </Link>
         </p>
       </div>
     </div>
+  );
+}
+
+export default function RegisterPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-[#0F1509] flex items-center justify-center">
+        <div className="w-8 h-8 rounded-full border-2 border-chlorophyll border-t-transparent animate-spin" />
+      </div>
+    }>
+      <RegisterForm />
+    </Suspense>
   );
 }

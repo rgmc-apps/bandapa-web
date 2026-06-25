@@ -102,15 +102,15 @@ export default function AdminSidebar() {
           New Announcement
         </a>
 
-        {/* View Site */}
+        {/* Switch to User */}
         <a
-          href="/download"
-          className="flex items-center gap-3 px-4 py-3 text-pure-white/65 hover:bg-white/[0.06] hover:text-pure-white transition-all duration-200 rounded-lg font-mono text-sm"
+          href="/dashboard"
+          className="flex items-center gap-3 px-4 py-3 text-chlorophyll-green/70 hover:bg-white/[0.06] hover:text-chlorophyll-green transition-all duration-200 rounded-lg font-mono text-sm"
         >
-          <span className="material-symbols-outlined" style={{ fontSize: "20px" }}>
-            open_in_new
+          <span className="material-symbols-outlined" style={{ fontSize: "20px", fontVariationSettings: "'FILL' 1" }}>
+            switch_account
           </span>
-          View Site
+          Switch to User
         </a>
 
         {/* Logout */}

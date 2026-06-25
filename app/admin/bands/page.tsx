@@ -16,6 +16,7 @@ const empty: BandForm = {
   label: "",
   spotify_url: "",
   social_links: {},
+  is_public: true,
 };
 
 export default function BandsPage() {
@@ -92,6 +93,7 @@ export default function BandsPage() {
       label: band.label ?? "",
       spotify_url: band.spotify_url ?? "",
       social_links: band.social_links ?? {},
+      is_public: band.is_public,
     });
     setGenreInput(band.genres.join(", "));
     setError("");
@@ -166,7 +168,7 @@ export default function BandsPage() {
             <table className="w-full">
               <thead>
                 <tr>
-                  {["Name", "Genres", "Date Formed", "Label", "Invite Code", "Actions"].map((h) => (
+                  {["Name", "Genres", "Date Formed", "Label", "Invite Code", "Visibility", "Actions"].map((h) => (
                     <th key={h} className="table-header">{h}</th>
                   ))}
                 </tr>
@@ -185,6 +187,19 @@ export default function BandsPage() {
                     <td className="table-cell font-mono text-xs">{band.date_formed}</td>
                     <td className="table-cell text-on-surface-variant">{band.label ?? "—"}</td>
                     <td className="table-cell font-mono text-xs tracking-widest text-chlorophyll-dark">{band.invite_code}</td>
+                    <td className="table-cell">
+                      {band.is_public ? (
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-chlorophyll/10 text-chlorophyll-dark text-xs font-mono border border-chlorophyll/20">
+                          <span className="w-1.5 h-1.5 rounded-full bg-chlorophyll-dark" />
+                          Public
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-surface-mist text-on-surface-variant text-xs font-mono border border-outline-variant/40">
+                          <span className="w-1.5 h-1.5 rounded-full bg-on-surface-variant/40" />
+                          Private
+                        </span>
+                      )}
+                    </td>
                     <td className="table-cell">
                       <div className="flex items-center gap-1">
                         <button onClick={() => openMembers(band)} className="p-2 hover:bg-surface-mist rounded-lg text-on-surface-variant hover:text-primary transition-colors" title="View members">
@@ -234,6 +249,30 @@ export default function BandsPage() {
           <div>
             <label className="label-field">Spotify Artist ID</label>
             <input className="input-field font-mono" value={form.spotify_url ?? ""} onChange={(e) => setForm({ ...form, spotify_url: e.target.value })} placeholder="Optional" />
+          </div>
+
+          <div className="flex items-center justify-between p-4 rounded-xl border border-outline-variant/40 bg-surface-low/40">
+            <div>
+              <p className="text-sm font-medium text-obsidian">Public visibility</p>
+              <p className="text-xs text-on-surface-variant mt-0.5">
+                {form.is_public ? "This band is visible to all users." : "This band is hidden from all users."}
+              </p>
+            </div>
+            <button
+              type="button"
+              role="switch"
+              aria-checked={form.is_public}
+              onClick={() => setForm({ ...form, is_public: !form.is_public })}
+              className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 focus:outline-none ${
+                form.is_public ? "bg-chlorophyll" : "bg-outline-variant"
+              }`}
+            >
+              <span
+                className={`pointer-events-none inline-block h-5 w-5 rounded-full bg-white shadow-sm transform transition-transform duration-200 ${
+                  form.is_public ? "translate-x-5" : "translate-x-0"
+                }`}
+              />
+            </button>
           </div>
 
           {error && <p className="text-error text-sm">{error}</p>}

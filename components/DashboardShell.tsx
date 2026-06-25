@@ -15,10 +15,11 @@ const navItems = [
 interface DashboardShellProps {
   displayName: string;
   email: string;
+  isAdmin?: boolean;
   children: React.ReactNode;
 }
 
-export default function DashboardShell({ displayName, email, children }: DashboardShellProps) {
+export default function DashboardShell({ displayName, email, isAdmin, children }: DashboardShellProps) {
   const pathname = usePathname();
   const router = useRouter();
 
@@ -76,6 +77,15 @@ export default function DashboardShell({ displayName, email, children }: Dashboa
 
         <div className="pt-5 border-t border-white/10 space-y-1 animate-fade-in" style={{ animationDelay: "400ms" }}>
           <p className="px-4 text-pure-white/40 text-xs font-mono truncate mb-2">{email}</p>
+          {isAdmin && (
+            <a
+              href="/admin"
+              className="w-full flex items-center gap-3 px-4 py-3 text-chlorophyll-green/70 hover:bg-white/[0.06] hover:text-chlorophyll-green transition-all duration-200 rounded-lg font-mono text-sm"
+            >
+              <span className="material-symbols-outlined" style={{ fontSize: "20px", fontVariationSettings: "'FILL' 1" }}>admin_panel_settings</span>
+              Switch to Admin
+            </a>
+          )}
           <button
             onClick={handleLogout}
             className="w-full flex items-center gap-3 px-4 py-3 text-pure-white/65 hover:bg-white/[0.06] hover:text-pure-white transition-all duration-200 rounded-lg font-mono text-sm"

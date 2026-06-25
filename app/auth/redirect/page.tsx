@@ -1,12 +1,25 @@
 import { redirect } from "next/navigation";
 import { createClient, createAdminClient } from "@/lib/supabase/server";
 
-export default async function AuthRedirectPage() {
+export default async function AuthRedirectPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ next?: string }>;
+}) {
+  const { next } = await searchParams;
+
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
   if (!user) {
     redirect("/login");
+  }
+
+  // If a safe relative next URL was provided, go there directly
+  if (next && next.startsWith("/")) {
+    redirect(next);
   }
 
   const adminClient = createAdminClient();
@@ -17,8 +30,6 @@ export default async function AuthRedirectPage() {
     .single();
 
   if (adminError && adminError.code !== "PGRST116") {
-    // PGRST116 = no rows found (expected for non-admins)
-    // Anything else = bad service role key, network failure, wrong schema, etc.
     console.error("[auth/redirect] admin_users query failed:", adminError);
   }
 
