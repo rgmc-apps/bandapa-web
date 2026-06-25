@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import type { Band, Event, Venue } from "@/lib/types";
-import { detectAndReportConflicts } from "@/lib/conflicts";
+import { detectPersonalEventConflicts, detectBandEventConflicts, type MemberConflictRow } from "@/lib/conflicts";
 import Modal from "@/components/Modal";
 
 const MONTH_NAMES = ["January","February","March","April","May","June","July","August","September","October","November","December"];
@@ -94,6 +94,7 @@ export default function CalendarPage() {
   const [error, setError] = useState("");
   const [detailEvent, setDetailEvent] = useState<Event | null>(null);
   const [conflictWarnings, setConflictWarnings] = useState<Event[]>([]);
+  const [memberConflicts, setMemberConflicts] = useState<MemberConflictRow[]>([]);
   const [checkingConflicts, setCheckingConflicts] = useState(false);
   const conflictTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -153,6 +154,7 @@ export default function CalendarPage() {
   useEffect(() => {
     if (!addOpen || !form.start_date || !form.end_date) {
       setConflictWarnings([]);
+      setMemberConflicts([]);
       return;
     }
 
@@ -167,6 +169,7 @@ export default function CalendarPage() {
 
       if (new Date(endISO) <= new Date(startISO)) {
         setConflictWarnings([]);
+        setMemberConflicts([]);
         return;
       }
 
@@ -184,6 +187,15 @@ export default function CalendarPage() {
           .gt("end_time", startISO)
           .limit(5);
         data = res.data as Event[] | null;
+
+        // Check member conflicts (personal events + cross-band events)
+        const { data: memberRows } = await supabase.rpc("find_band_event_conflicts", {
+          p_band_id: form.band_id,
+          p_start: startISO,
+          p_end: endISO,
+          p_exclude_event_id: "00000000-0000-0000-0000-000000000000",
+        });
+        setMemberConflicts((memberRows ?? []) as MemberConflictRow[]);
       } else if (bands.length > 0) {
         // Personal event: check for band events the user is a member of
         const res = await supabase
@@ -195,6 +207,9 @@ export default function CalendarPage() {
           .gt("end_time", startISO)
           .limit(5);
         data = res.data as Event[] | null;
+        setMemberConflicts([]);
+      } else {
+        setMemberConflicts([]);
       }
 
       setConflictWarnings(data ?? []);
@@ -273,7 +288,7 @@ export default function CalendarPage() {
   function openAdd() {
     const dateKey = toDateKey(selectedDate);
     setForm({ ...emptyForm, start_date: dateKey, end_date: dateKey });
-    setError(""); setConflictWarnings([]); setAddOpen(true);
+    setError(""); setConflictWarnings([]); setMemberConflicts([]); setAddOpen(true);
   }
 
   async function handleCreateEvent() {
@@ -294,7 +309,11 @@ export default function CalendarPage() {
       is_all_day: form.is_all_day || isMultiDay, location: form.location || null, description: form.description || null,
     }).select("*").single();
     if (err || !created) { setError(err?.message ?? "Failed to create event."); setSaving(false); return; }
-    if (!form.band_id) await detectAndReportConflicts(supabase, userId, created as Event);
+    if (!form.band_id) {
+      await detectPersonalEventConflicts(supabase, userId, created as Event);
+    } else {
+      await detectBandEventConflicts(supabase, created as Event);
+    }
     setAddOpen(false); setSaving(false); fetchEvents();
   }
 
@@ -390,7 +409,7 @@ export default function CalendarPage() {
                     const et = `${String(eh).padStart(2,"0")}:${String(em).padStart(2,"0")}`;
                     const dateKey = toDateKey(day);
                     setForm({ ...emptyForm, start_date: dateKey, end_date: dateKey, start_time: st, end_time: et });
-                    setError(""); setConflictWarnings([]); setAddOpen(true);
+                    setError(""); setConflictWarnings([]); setMemberConflicts([]); setAddOpen(true);
                   }}
                 >
                   {/* Hour lines */}
@@ -734,52 +753,81 @@ export default function CalendarPage() {
               Checking for conflicts…
             </div>
           )}
-          {!checkingConflicts && conflictWarnings.length > 0 && (
-            <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 space-y-2">
-              <div className="flex items-center gap-2">
-                <span className="material-symbols-outlined text-amber-600 shrink-0" style={{ fontSize: "18px" }}>warning</span>
-                <p className="text-sm font-semibold text-amber-800">
-                  {conflictWarnings.length === 1
-                    ? "Schedule conflict detected"
-                    : `${conflictWarnings.length} schedule conflicts detected`}
+          {!checkingConflicts && (conflictWarnings.length > 0 || memberConflicts.length > 0) && (() => {
+            const total = conflictWarnings.length + memberConflicts.length;
+            return (
+              <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 space-y-3">
+                <div className="flex items-center gap-2">
+                  <span className="material-symbols-outlined text-amber-600 shrink-0" style={{ fontSize: "18px" }}>warning</span>
+                  <p className="text-sm font-semibold text-amber-800">
+                    {total === 1 ? "Schedule conflict detected" : `${total} schedule conflicts detected`}
+                  </p>
+                </div>
+
+                {conflictWarnings.length > 0 && (
+                  <div className="space-y-1.5 pl-1">
+                    {form.band_id && memberConflicts.length > 0 && (
+                      <p className="text-[10px] font-mono font-semibold text-amber-700/60 uppercase tracking-wider mb-1">Band schedule</p>
+                    )}
+                    {conflictWarnings.map((w) => (
+                      <div key={w.id} className="flex items-start gap-1.5 text-xs text-amber-700">
+                        <span className="shrink-0 mt-0.5">·</span>
+                        <span>
+                          <span className="font-semibold">{w.title}</span>
+                          {w.band_id && bandById.get(w.band_id) && (
+                            <span className="font-normal"> · {bandById.get(w.band_id)!.name}</span>
+                          )}
+                          <span className="font-normal text-amber-600">
+                            {" — "}
+                            {w.is_all_day
+                              ? "All day"
+                              : `${new Date(w.start_time).toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" })} – ${new Date(w.end_time).toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" })}`}
+                          </span>
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {memberConflicts.length > 0 && (
+                  <div className="space-y-1.5 pl-1">
+                    <p className="text-[10px] font-mono font-semibold text-amber-700/60 uppercase tracking-wider mb-1">Member conflicts</p>
+                    {memberConflicts.map((mc, i) => (
+                      <div key={i} className="flex items-start gap-1.5 text-xs text-amber-700">
+                        <span className="shrink-0 mt-0.5">·</span>
+                        <span>
+                          <span className="font-semibold">{mc.member_name}</span>
+                          <span className="font-normal"> has </span>
+                          <span className="font-semibold">{mc.conflicting_event_title}</span>
+                          {mc.conflicting_band_name && (
+                            <span className="font-normal text-amber-600"> · {mc.conflicting_band_name}</span>
+                          )}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                <p className="text-[11px] text-amber-600 pt-0.5">
+                  {form.band_id
+                    ? memberConflicts.length > 0
+                      ? "Some band members have conflicting schedules. A conflict will be recorded on save."
+                      : "This band already has an event at this time. You can still save."
+                    : "Your personal event overlaps with band schedule. A conflict will be recorded on save."}
                 </p>
               </div>
-              <div className="space-y-1.5 pl-1">
-                {conflictWarnings.map((w) => (
-                  <div key={w.id} className="flex items-start gap-1.5 text-xs text-amber-700">
-                    <span className="shrink-0 mt-0.5">·</span>
-                    <span>
-                      <span className="font-semibold">{w.title}</span>
-                      {w.band_id && bandById.get(w.band_id) && (
-                        <span className="font-normal"> · {bandById.get(w.band_id)!.name}</span>
-                      )}
-                      <span className="font-normal text-amber-600">
-                        {" — "}
-                        {w.is_all_day
-                          ? "All day"
-                          : `${new Date(w.start_time).toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" })} – ${new Date(w.end_time).toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" })}`}
-                      </span>
-                    </span>
-                  </div>
-                ))}
-              </div>
-              <p className="text-[11px] text-amber-600 pt-0.5">
-                {form.band_id
-                  ? "This band already has an event at this time. You can still save."
-                  : "Your personal event overlaps with band schedule. A conflict will be recorded on save."}
-              </p>
-            </div>
-          )}
+            );
+          })()}
 
           {error && <p className="text-error text-sm">{error}</p>}
           <div className="flex justify-end gap-3 pt-2">
             <button className="btn-secondary" onClick={() => setAddOpen(false)}>Cancel</button>
             <button
-              className={conflictWarnings.length > 0 ? "btn-danger" : "btn-primary"}
+              className={(conflictWarnings.length > 0 || memberConflicts.length > 0) ? "btn-danger" : "btn-primary"}
               onClick={handleCreateEvent}
               disabled={saving || !form.title.trim()}
             >
-              {saving ? "Saving…" : conflictWarnings.length > 0 ? "Save Anyway" : "Add Event"}
+              {saving ? "Saving…" : (conflictWarnings.length > 0 || memberConflicts.length > 0) ? "Save Anyway" : "Add Event"}
             </button>
           </div>
         </div>
@@ -791,7 +839,7 @@ export default function CalendarPage() {
           <div className="p-6 space-y-3 text-sm">
             {(() => { const c = getEventColor(detailEvent); return (
               <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium w-fit"
-                style={{ background: c.bg, color: c.text, borderLeft: `3px solid ${c.accent}` }}>
+                style={{ background: c.bg, color: c.text, border: `1.5px solid ${c.accent}40` }}>
                 {detailEvent.band_id && bandById.get(detailEvent.band_id) ? bandById.get(detailEvent.band_id)!.name : "Personal event"}
               </div>
             ); })()}
