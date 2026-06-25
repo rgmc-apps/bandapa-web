@@ -5,7 +5,10 @@ import { useParams, useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import type { Band, BandMember, Profile } from "@/lib/types";
 import Modal from "@/components/Modal";
+import ImageCropper from "@/components/ImageCropper";
 import { getTransitionBand, setTransitionBand } from "@/lib/transition-store";
+
+type CropTarget = { src: string; target: "cover" | "banner" } | null;
 
 type MemberRow = BandMember & { user: Profile };
 
@@ -50,6 +53,7 @@ export default function BandDetailPage() {
   const [editBannerPreview, setEditBannerPreview] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const [cropTarget, setCropTarget] = useState<CropTarget>(null);
 
   const imageInputRef = useRef<HTMLInputElement>(null);
   const bannerInputRef = useRef<HTMLInputElement>(null);
@@ -219,19 +223,31 @@ export default function BandDetailPage() {
   function handleImagePick(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
-    setEditImageFile(file);
+    e.target.value = "";
     const reader = new FileReader();
-    reader.onload = () => setEditImagePreview(reader.result as string);
+    reader.onload = () => setCropTarget({ src: reader.result as string, target: "cover" });
     reader.readAsDataURL(file);
   }
 
   function handleBannerPick(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
-    setEditBannerFile(file);
+    e.target.value = "";
     const reader = new FileReader();
-    reader.onload = () => setEditBannerPreview(reader.result as string);
+    reader.onload = () => setCropTarget({ src: reader.result as string, target: "banner" });
     reader.readAsDataURL(file);
+  }
+
+  function handleCropDone(file: File, preview: string) {
+    if (!cropTarget) return;
+    if (cropTarget.target === "cover") {
+      setEditImageFile(file);
+      setEditImagePreview(preview);
+    } else {
+      setEditBannerFile(file);
+      setEditBannerPreview(preview);
+    }
+    setCropTarget(null);
   }
 
   if (loading && !cached && !band) {
@@ -586,6 +602,26 @@ export default function BandDetailPage() {
             <button className="btn-primary" onClick={handleSaveEdit} disabled={saving}>{saving ? "Saving…" : "Save changes"}</button>
           </div>
         </div>
+      </Modal>
+
+      {/* Crop modal — sits on top of the edit modal */}
+      <Modal
+        title={cropTarget?.target === "banner" ? "Crop banner" : "Crop photo"}
+        open={!!cropTarget}
+        onClose={() => setCropTarget(null)}
+      >
+        {cropTarget && (
+          <ImageCropper
+            src={cropTarget.src}
+            aspect={cropTarget.target === "banner" ? 4 : 1}
+            outputWidth={cropTarget.target === "banner" ? 1200 : 400}
+            label={cropTarget.target === "banner"
+              ? "Drag to reposition · scroll to zoom"
+              : "Drag to reposition your photo · scroll to zoom"}
+            onCrop={handleCropDone}
+            onCancel={() => setCropTarget(null)}
+          />
+        )}
       </Modal>
     </div>
   );

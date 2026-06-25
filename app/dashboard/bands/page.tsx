@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import type { Band } from "@/lib/types";
 import Modal from "@/components/Modal";
+import ImageCropper from "@/components/ImageCropper";
 import { setTransitionBand } from "@/lib/transition-store";
 
 const GENRE_LIST = [
@@ -36,6 +37,7 @@ export default function BandsPage() {
   const [otherGenres, setOtherGenres] = useState("");
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [cropSrc, setCropSrc] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -72,11 +74,7 @@ export default function BandsPage() {
       return;
     }
 
-    document.startViewTransition(async () => {
-      router.push(href);
-      // Two rAFs give React time to render the new page from transition store
-      await new Promise<void>((r) => requestAnimationFrame(() => requestAnimationFrame(() => r())));
-    });
+    document.startViewTransition(() => { router.push(href); });
   }
 
   function openCreate() {
@@ -101,10 +99,16 @@ export default function BandsPage() {
   function handleImagePick(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
-    setImageFile(file);
+    e.target.value = "";
     const reader = new FileReader();
-    reader.onload = () => setImagePreview(reader.result as string);
+    reader.onload = () => setCropSrc(reader.result as string);
     reader.readAsDataURL(file);
+  }
+
+  function handleCropDone(file: File, preview: string) {
+    setImageFile(file);
+    setImagePreview(preview);
+    setCropSrc(null);
   }
 
   async function handleCreate() {
@@ -129,7 +133,7 @@ export default function BandsPage() {
         date_formed: form.date_formed || new Date().toISOString().slice(0, 10),
         label: form.label || null,
         spotify_url: form.spotify_url || null,
-        owner_id: user.id,
+        created_by: user.id,
       })
       .select("*")
       .single();
@@ -226,43 +230,57 @@ export default function BandsPage() {
             <button
               key={band.id}
               onClick={() => navigateToBand(band)}
-              className="card p-5 hover:shadow-card hover:-translate-y-0.5 transition-all duration-200 spring-row text-left w-full group"
+              className="card overflow-hidden hover:shadow-card hover:-translate-y-0.5 transition-all duration-200 spring-row text-left w-full group"
               style={{ animationDelay: `${i * 40}ms` }}
             >
-              <div className="flex items-center gap-3 mb-3">
+              {/* Banner */}
+              <div className="relative h-24 shrink-0">
+                {band.banner_url ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={band.banner_url} alt="" className="w-full h-full object-cover" />
+                ) : (
+                  <div className="w-full h-full bg-gradient-to-br from-primary/20 via-chlorophyll/10 to-surface-mist" />
+                )}
+                {/* Cover photo overlapping banner */}
                 <div
-                  className="w-12 h-12 rounded-xl bg-surface-mist overflow-hidden shrink-0 flex items-center justify-center"
+                  className="absolute -bottom-5 left-4 w-11 h-11 rounded-xl ring-2 ring-white bg-surface-mist overflow-hidden flex items-center justify-center shadow-sm"
                   style={{ viewTransitionName: `band-cover-${band.id}` }}
                 >
                   {band.image_url ? (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img src={band.image_url} alt={band.name} className="w-full h-full object-cover" />
                   ) : (
-                    <span className="material-symbols-outlined text-primary" style={{ fontSize: "22px" }}>groups</span>
+                    <span className="material-symbols-outlined text-primary" style={{ fontSize: "20px" }}>groups</span>
                   )}
                 </div>
-                <h3
-                  className="font-headline font-semibold text-obsidian truncate flex-1"
-                  style={{ viewTransitionName: `band-name-${band.id}` }}
-                >
-                  {band.name}
-                </h3>
-                <span
-                  className="material-symbols-outlined text-on-surface-variant/30 group-hover:text-on-surface-variant/70 transition-colors shrink-0"
-                  style={{ fontSize: "18px" }}
-                >
-                  chevron_right
-                </span>
               </div>
-              <div className="flex flex-wrap gap-1.5">
-                {(band.genres as string[]).slice(0, 3).map((g) => (
-                  <span key={g} className="text-xs font-mono px-2 py-0.5 rounded-full bg-chlorophyll/10 text-chlorophyll-dark border border-chlorophyll/20">{g}</span>
-                ))}
-                {(band.genres as string[]).length > 3 && (
-                  <span className="text-xs font-mono px-2 py-0.5 text-on-surface-variant/50">
-                    +{(band.genres as string[]).length - 3}
+
+              {/* Card body */}
+              <div className="pt-7 px-4 pb-4">
+                <div className="flex items-center justify-between gap-2 mb-2">
+                  <h3
+                    className="font-headline font-semibold text-obsidian truncate"
+                    style={{ viewTransitionName: `band-name-${band.id}` }}
+                  >
+                    {band.name}
+                  </h3>
+                  <span
+                    className="material-symbols-outlined text-on-surface-variant/30 group-hover:text-on-surface-variant/70 transition-colors shrink-0"
+                    style={{ fontSize: "18px" }}
+                  >
+                    chevron_right
                   </span>
-                )}
+                </div>
+                <div className="flex flex-wrap gap-1.5">
+                  {(band.genres as string[]).slice(0, 3).map((g) => (
+                    <span key={g} className="text-xs font-mono px-2 py-0.5 rounded-full bg-chlorophyll/10 text-chlorophyll-dark border border-chlorophyll/20">{g}</span>
+                  ))}
+                  {(band.genres as string[]).length > 3 && (
+                    <span className="text-xs font-mono px-2 py-0.5 text-on-surface-variant/50">
+                      +{(band.genres as string[]).length - 3}
+                    </span>
+                  )}
+                </div>
               </div>
             </button>
           ))}
@@ -275,17 +293,25 @@ export default function BandsPage() {
             <button
               type="button"
               onClick={() => fileInputRef.current?.click()}
-              className="w-16 h-16 rounded-xl bg-surface-mist overflow-hidden shrink-0 flex items-center justify-center"
+              className="w-16 h-16 rounded-xl bg-surface-mist overflow-hidden shrink-0 flex items-center justify-center border border-outline-variant hover:border-primary transition-colors group relative"
             >
               {imagePreview ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={imagePreview} alt="Cover" className="w-full h-full object-cover" />
+                <>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={imagePreview} alt="Cover" className="w-full h-full object-cover" />
+                  <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                    <span className="material-symbols-outlined text-white" style={{ fontSize: "18px" }}>crop</span>
+                  </div>
+                </>
               ) : (
-                <span className="material-symbols-outlined text-on-surface-variant" style={{ fontSize: "24px" }}>add_a_photo</span>
+                <span className="material-symbols-outlined text-on-surface-variant group-hover:text-primary transition-colors" style={{ fontSize: "24px" }}>add_a_photo</span>
               )}
             </button>
             <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleImagePick} />
-            <p className="text-xs text-on-surface-variant">Band photo (optional)</p>
+            <div>
+              <p className="text-sm font-medium text-obsidian">Band photo</p>
+              <p className="text-xs text-on-surface-variant mt-0.5">Optional · click to upload and crop</p>
+            </div>
           </div>
 
           <div>
@@ -350,6 +376,20 @@ export default function BandsPage() {
             </button>
           </div>
         </div>
+      </Modal>
+
+      {/* Cover photo cropper */}
+      <Modal title="Crop photo" open={!!cropSrc} onClose={() => setCropSrc(null)}>
+        {cropSrc && (
+          <ImageCropper
+            src={cropSrc}
+            aspect={1}
+            outputWidth={400}
+            label="Drag to reposition · scroll to zoom"
+            onCrop={handleCropDone}
+            onCancel={() => setCropSrc(null)}
+          />
+        )}
       </Modal>
     </div>
   );
