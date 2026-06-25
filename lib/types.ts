@@ -91,7 +91,7 @@ export interface BandMember {
   id: string;
   band_id: string;
   user_id: string;
-  role: string;
+  is_admin: boolean;
   joined_at: string;
 }
 

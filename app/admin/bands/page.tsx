@@ -63,16 +63,14 @@ export default function BandsPage() {
   }
 
   async function handleToggleAdmin(member: MemberRow) {
-    const isCurrentlyAdmin = member.role === "admin";
-    const action = isCurrentlyAdmin ? "Remove admin from" : "Make admin";
+    const action = member.is_admin ? "Remove admin from" : "Make admin";
     if (!confirm(`${action} ${member.user.full_name || member.user.username}?`)) return;
-    const newRole = isCurrentlyAdmin ? "member" : "admin";
     await fetch("/api/admin/band-members", {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ member_id: member.id, role: newRole }),
+      body: JSON.stringify({ member_id: member.id, is_admin: !member.is_admin }),
     });
-    setMembers(prev => prev.map(m => m.id === member.id ? { ...m, role: newRole } : m));
+    setMembers(prev => prev.map(m => m.id === member.id ? { ...m, is_admin: !m.is_admin } : m));
   }
 
   function openCreate() {
@@ -281,7 +279,7 @@ export default function BandsPage() {
                         {isCreator && (
                           <span className="text-[10px] font-mono px-1.5 py-0.5 rounded-full bg-chlorophyll/10 text-chlorophyll-dark border border-chlorophyll/20">Owner</span>
                         )}
-                        {m.role === "admin" && !isCreator && (
+                        {m.is_admin && !isCreator && (
                           <span className="text-[10px] font-mono px-1.5 py-0.5 rounded-full bg-primary-container/30 text-primary">Admin</span>
                         )}
                       </div>
@@ -293,10 +291,10 @@ export default function BandsPage() {
                         <button
                           onClick={() => handleToggleAdmin(m)}
                           className="p-1.5 hover:bg-surface-mist rounded-lg text-on-surface-variant hover:text-primary transition-colors"
-                          title={m.role === "admin" ? "Remove admin" : "Make admin"}
+                          title={m.is_admin ? "Remove admin" : "Make admin"}
                         >
                           <span className="material-symbols-outlined" style={{ fontSize: "16px" }}>
-                            {m.role === "admin" ? "shield_with_heart" : "shield_person"}
+                            {m.is_admin ? "shield_with_heart" : "shield_person"}
                           </span>
                         </button>
                       )}

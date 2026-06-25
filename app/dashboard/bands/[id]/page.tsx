@@ -54,7 +54,7 @@ export default function BandDetailPage() {
 
   const myMembership = members.find((m) => m.user_id === currentUserId);
   const isOwner = band?.owner_id === currentUserId;
-  const isAdmin = isOwner || myMembership?.role === "admin";
+  const isAdmin = isOwner || (myMembership?.is_admin ?? false);
 
   function openEdit() {
     if (!band) return;
@@ -134,10 +134,9 @@ export default function BandDetailPage() {
   }
 
   async function handleToggleAdmin(member: MemberRow) {
-    const isCurrentlyAdmin = member.role === "admin";
-    const action = isCurrentlyAdmin ? "Remove admin from" : "Make admin";
+    const action = member.is_admin ? "Remove admin from" : "Make admin";
     if (!confirm(`${action} ${member.user.full_name || member.user.username}?`)) return;
-    await supabase.from("band_members").update({ role: isCurrentlyAdmin ? "member" : "admin" }).eq("id", member.id);
+    await supabase.from("band_members").update({ is_admin: !member.is_admin }).eq("id", member.id);
     fetchData();
   }
 
@@ -282,7 +281,7 @@ export default function BandDetailPage() {
                 </div>
               </div>
               <div className="flex items-center gap-2">
-                {(m.role === "admin" || m.user_id === band.owner_id) && (
+                {(m.is_admin || m.user_id === band.owner_id) && (
                   <span className="text-xs font-mono px-2 py-0.5 rounded-full bg-primary-container/30 text-primary">
                     {m.user_id === band.owner_id ? "Owner" : "Admin"}
                   </span>
@@ -291,14 +290,14 @@ export default function BandDetailPage() {
                   <button
                     onClick={() => handleToggleAdmin(m)}
                     className="p-1.5 hover:bg-surface-mist rounded-lg text-on-surface-variant hover:text-primary transition-colors"
-                    title={m.role === "admin" ? "Remove admin" : "Make admin"}
+                    title={m.is_admin ? "Remove admin" : "Make admin"}
                   >
                     <span className="material-symbols-outlined" style={{ fontSize: "16px" }}>
-                      {m.role === "admin" ? "shield_with_heart" : "shield_person"}
+                      {m.is_admin ? "shield_with_heart" : "shield_person"}
                     </span>
                   </button>
                 )}
-                {isAdmin && m.role !== "admin" && m.user_id !== currentUserId && m.user_id !== band.owner_id && (
+                {isAdmin && !m.is_admin && m.user_id !== currentUserId && m.user_id !== band.owner_id && (
                   <button
                     onClick={() => handleRemoveMember(m)}
                     className="p-1.5 hover:bg-error-container hover:text-on-error-container rounded-lg text-on-surface-variant transition-colors"

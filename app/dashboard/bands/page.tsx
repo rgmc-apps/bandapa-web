@@ -129,7 +129,7 @@ export default function BandsPage() {
       }
     }
 
-    await supabase.from("band_members").insert({ band_id: band.id, user_id: user.id, role: "admin" });
+    await supabase.from("band_members").insert({ band_id: band.id, user_id: user.id, is_admin: true });
 
     setCreateOpen(false);
     setSaving(false);
