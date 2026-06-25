@@ -40,8 +40,8 @@ function RegisterForm() {
     setError("");
 
     const redirectTo = next
-      ? `${window.location.origin}/auth/redirect?next=${encodeURIComponent(next)}`
-      : `${window.location.origin}/auth/redirect`;
+      ? `${window.location.origin}/auth/callback?next=${encodeURIComponent(next)}`
+      : `${window.location.origin}/auth/callback`;
 
     await supabase.auth.signInWithOAuth({
       provider: "google",

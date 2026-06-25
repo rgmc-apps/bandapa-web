@@ -73,7 +73,11 @@
       "Bash(Select-Object -First 50 FullName)",
       "Bash(kill %1)",
       "Bash(Get-ChildItem -Recurse -Path \"C:\\\\claude\\\\bandapa-web\\\\app\" -Name)",
-      "Bash(Sort-Object)"
+      "Bash(Sort-Object)",
+      "Bash(New-Item -Path \"C:\\\\claude\\\\bandapa-web\\\\app\\\\auth\\\\callback\\\\route.ts\" -ItemType File -Force)",
+      "Bash(Out-Null)",
+      "Bash(Write-Output \"created\")",
+      "PowerShell(New-Item *)"
     ]
   },
   "enabledMcpjsonServers": [
