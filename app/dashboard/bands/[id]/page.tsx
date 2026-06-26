@@ -90,6 +90,7 @@ export default function BandDetailPage() {
   const [lightboxIdx, setLightboxIdx] = useState<number | null>(null);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [deletingPhoto, setDeletingPhoto] = useState(false);
+  const [photoToast, setPhotoToast] = useState<{ type: "success" | "error"; message: string } | null>(null);
   const [copied, setCopied] = useState(false);
   const [copiedShare, setCopiedShare] = useState(false);
 
@@ -324,6 +325,11 @@ export default function BandDetailPage() {
     if (idx !== slideIdx) setSlideIdx(idx);
   }
 
+  function showPhotoToast(type: "success" | "error", message: string) {
+    setPhotoToast({ type, message });
+    setTimeout(() => setPhotoToast(null), 3500);
+  }
+
   async function handlePhotoPick(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file || !currentUserId) return;
@@ -334,14 +340,23 @@ export default function BandDetailPage() {
     const { error: uploadErr } = await supabase.storage
       .from("band-images")
       .upload(filename, file, { contentType: file.type, upsert: false });
-    if (!uploadErr) {
-      const { data: { publicUrl } } = supabase.storage.from("band-images").getPublicUrl(filename);
-      await supabase.from("band_photos").insert({ band_id: id, url: publicUrl, uploaded_by: currentUserId });
-      const { data: photoRows } = await supabase
-        .from("band_photos").select("id, url, uploaded_by, created_at")
-        .eq("band_id", id).order("created_at", { ascending: true });
-      setPhotos((photoRows ?? []) as BandPhoto[]);
+    if (uploadErr) {
+      showPhotoToast("error", "Upload failed. Try again.");
+      setUploadingPhoto(false);
+      return;
     }
+    const { data: { publicUrl } } = supabase.storage.from("band-images").getPublicUrl(filename);
+    const { error: dbErr } = await supabase.from("band_photos").insert({ band_id: id, url: publicUrl, uploaded_by: currentUserId });
+    if (dbErr) {
+      showPhotoToast("error", dbErr.message);
+      setUploadingPhoto(false);
+      return;
+    }
+    const { data: photoRows } = await supabase
+      .from("band_photos").select("id, url, uploaded_by, created_at")
+      .eq("band_id", id).order("created_at", { ascending: true });
+    setPhotos((photoRows ?? []) as BandPhoto[]);
+    showPhotoToast("success", "Photo added.");
     setUploadingPhoto(false);
   }
 
@@ -436,12 +451,12 @@ export default function BandDetailPage() {
     return (
       <div
         key={ev.id}
-        className={`flex items-start gap-3 px-3 py-2.5 rounded-lg ${
+        className={`flex items-start gap-3 px-3 py-2.5 rounded-lg transition-colors ${
           isCurrent
             ? "bg-primary/5 ring-1 ring-primary/15"
             : isPast
-            ? "opacity-55"
-            : "hover:bg-surface-mist/60 transition-colors"
+            ? "opacity-60"
+            : "hover:bg-status-upcoming/5"
         }`}
       >
         {isCurrent && (
@@ -452,7 +467,7 @@ export default function BandDetailPage() {
         )}
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-1.5 flex-wrap">
-            <p className={`text-sm font-medium truncate ${isPast ? "text-on-surface-variant" : "text-obsidian"}`}>
+            <p className={`text-sm font-medium truncate ${isPast ? "text-status-past" : "text-obsidian"}`}>
               {ev.title}
             </p>
             {EVENT_TYPE_LABELS[ev.event_type] && (
@@ -692,6 +707,20 @@ export default function BandDetailPage() {
         )}
       </div>
 
+      {/* Photo upload toast */}
+      {photoToast && (
+        <div className={`fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2.5 px-4 py-3 rounded-xl shadow-modal text-sm font-medium animate-fade-in-up ${
+          photoToast.type === "success"
+            ? "bg-primary text-white"
+            : "bg-error text-white"
+        }`}>
+          <span className="material-symbols-outlined" style={{ fontSize: "18px" }}>
+            {photoToast.type === "success" ? "check_circle" : "error"}
+          </span>
+          {photoToast.message}
+        </div>
+      )}
+
       {/* Photos */}
       <div className="card overflow-hidden mb-6">
         <div className="flex items-center justify-between px-6 py-4 border-b border-outline-variant/30">
@@ -875,7 +904,7 @@ export default function BandDetailPage() {
 
             {upcomingEvents.length > 0 && (
               <section>
-                <p className="text-[10px] font-mono font-semibold text-on-surface-variant/50 uppercase tracking-[0.08em] mb-2">
+                <p className="text-[10px] font-mono font-semibold text-status-upcoming uppercase tracking-[0.08em] mb-2">
                   Upcoming · {upcomingEvents.length}
                 </p>
                 <div className="space-y-1.5">{upcomingEvents.map(ev => renderEventRow(ev, "upcoming"))}</div>
@@ -885,7 +914,7 @@ export default function BandDetailPage() {
             {pastEvents.length > 0 && (
               <section>
                 <button
-                  className="text-[10px] font-mono font-semibold text-on-surface-variant/50 uppercase tracking-[0.08em] flex items-center gap-1 w-full hover:text-on-surface-variant transition-colors mb-2"
+                  className="text-[10px] font-mono font-semibold text-status-past/70 uppercase tracking-[0.08em] flex items-center gap-1 w-full hover:text-status-past transition-colors mb-2"
                   onClick={() => setShowPastEvents(p => !p)}
                 >
                   Past · {pastEvents.length}
@@ -956,7 +985,7 @@ export default function BandDetailPage() {
                   {resolvedConflicts.map(c => (
                     <div key={c.id} className="flex items-center gap-3 px-3 py-2 rounded-lg">
                       <span
-                        className={`material-symbols-outlined shrink-0 ${c.status === "greenlit" ? "text-primary" : "text-on-surface-variant/40"}`}
+                        className={`material-symbols-outlined shrink-0 ${c.status === "greenlit" ? "text-status-approved" : "text-status-cancelled/60"}`}
                         style={{ fontSize: "16px" }}
                       >
                         {c.status === "greenlit" ? "check_circle" : "cancel"}
@@ -975,10 +1004,10 @@ export default function BandDetailPage() {
                       </div>
                       <span className={`text-[9px] font-mono px-1.5 py-[2px] rounded-full shrink-0 ${
                         c.status === "greenlit"
-                          ? "bg-primary/10 text-primary"
-                          : "bg-surface-mist text-on-surface-variant"
+                          ? "bg-status-approved/12 text-status-approved"
+                          : "bg-status-cancelled/10 text-status-cancelled"
                       }`}>
-                        {c.status}
+                        {c.status === "greenlit" ? "approved" : "cancelled"}
                       </span>
                     </div>
                   ))}
@@ -1002,9 +1031,9 @@ export default function BandDetailPage() {
               return (
                 <div key={entry.id} className="flex items-start gap-3 py-3 first:pt-0 last:pb-0">
                   <div className={`w-7 h-7 rounded-full flex items-center justify-center shrink-0 mt-0.5 ${
-                    isJoined ? "bg-primary/10" : isRemoved ? "bg-error/10" : "bg-surface-mist"
+                    isJoined ? "bg-primary/10" : isRemoved ? "bg-error/10" : "bg-status-past/10"
                   }`}>
-                    <span className={`material-symbols-outlined ${isJoined ? "text-primary" : isRemoved ? "text-error" : "text-on-surface-variant"}`} style={{ fontSize: "14px" }}>
+                    <span className={`material-symbols-outlined ${isJoined ? "text-primary" : isRemoved ? "text-error" : "text-status-past"}`} style={{ fontSize: "14px" }}>
                       {isJoined ? "person_add" : isRemoved ? "person_remove" : "logout"}
                     </span>
                   </div>

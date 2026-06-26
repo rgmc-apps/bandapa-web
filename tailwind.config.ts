@@ -95,6 +95,15 @@ const config: Config = {
         "on-error": "#ffffff",
         "on-error-container": "#93000a",
 
+        // Status semantic tokens
+        // current/now → uses existing `primary`
+        status: {
+          upcoming:  "#1B6AAB",   // mineral blue — forward, unscheduled horizon
+          approved:  "#007868",   // teal-jade — resolved positively, distinct from primary
+          cancelled: "#945200",   // dark amber — stopped deliberately, not a system error
+          past:      "#6B5D52",   // warm stone — receded, historical
+        },
+
         // Outline (nested + flat)
         outline: {
           DEFAULT: "#6e7a6c",

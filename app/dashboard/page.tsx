@@ -112,7 +112,7 @@ export default function DashboardHomePage() {
           <div className="space-y-2">
             {todayEvents.map((e) => (
               <div key={e.id} className="card p-4 flex items-center gap-3">
-                <span className={`w-1.5 self-stretch rounded-full ${e.band_id ? "bg-[#22d3ee]" : "bg-chlorophyll"}`} />
+                <span className={`w-2 h-2 rounded-full shrink-0 ${e.band_id ? "bg-status-upcoming" : "bg-primary"}`} />
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium text-obsidian truncate">{e.title}</p>
                   <p className="text-xs text-on-surface-variant">

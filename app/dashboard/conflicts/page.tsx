@@ -111,14 +111,14 @@ export default function ConflictsPage() {
                 </div>
 
                 <div className="space-y-2 mb-4">
-                  <div className="rounded-lg border border-[#22d3ee]/30 bg-[#22d3ee]/5 p-3">
-                    <p className="text-xs font-mono text-[#0891b2] mb-1">BAND EVENT</p>
+                  <div className="rounded-lg border border-status-upcoming/30 bg-status-upcoming/5 p-3">
+                    <p className="text-xs font-mono text-status-upcoming mb-1">BAND EVENT</p>
                     <p className="text-sm font-medium text-obsidian">{c.band_event?.title}</p>
                     <p className="text-xs text-on-surface-variant">{new Date(c.band_event?.start_time).toLocaleString()}</p>
                   </div>
                   <div className="text-center text-xs font-mono text-on-surface-variant">vs</div>
-                  <div className="rounded-lg border border-chlorophyll/30 bg-chlorophyll/5 p-3">
-                    <p className="text-xs font-mono text-chlorophyll-dark mb-1">PERSONAL EVENT</p>
+                  <div className="rounded-lg border border-primary/30 bg-primary/5 p-3">
+                    <p className="text-xs font-mono text-primary mb-1">PERSONAL EVENT</p>
                     <p className="text-sm font-medium text-obsidian">{c.personal_event?.title}</p>
                     <p className="text-xs text-on-surface-variant">{new Date(c.personal_event?.start_time).toLocaleString()}</p>
                   </div>
@@ -127,13 +127,13 @@ export default function ConflictsPage() {
                 <div className="flex gap-2 mb-3">
                   <button
                     onClick={() => castVote(c.id, "cancel")}
-                    className={`flex-1 text-xs font-mono py-2 rounded-lg border transition-colors ${myVote === "cancel" ? "bg-error-container text-on-error-container border-error-container" : "bg-white text-on-surface-variant border-outline-variant"}`}
+                    className={`flex-1 text-xs font-mono py-2 rounded-lg border transition-colors ${myVote === "cancel" ? "bg-status-cancelled/15 text-status-cancelled border-status-cancelled/50 font-semibold" : "bg-white text-on-surface-variant border-outline-variant hover:border-status-cancelled/40 hover:text-status-cancelled"}`}
                   >
                     Cancel rehearsal
                   </button>
                   <button
                     onClick={() => castVote(c.id, "greenlit")}
-                    className={`flex-1 text-xs font-mono py-2 rounded-lg border transition-colors ${myVote === "greenlit" ? "bg-chlorophyll text-obsidian border-chlorophyll" : "bg-white text-on-surface-variant border-outline-variant"}`}
+                    className={`flex-1 text-xs font-mono py-2 rounded-lg border transition-colors ${myVote === "greenlit" ? "bg-status-approved/15 text-status-approved border-status-approved/50 font-semibold" : "bg-white text-on-surface-variant border-outline-variant hover:border-status-approved/40 hover:text-status-approved"}`}
                   >
                     Keep it
                   </button>
@@ -141,8 +141,8 @@ export default function ConflictsPage() {
 
                 <div className="flex items-center gap-2 text-xs text-on-surface-variant">
                   <div className="flex-1 h-1.5 rounded-full bg-surface-mist overflow-hidden flex">
-                    <div className="h-full bg-error-container" style={{ width: `${totalMembers ? (cancelCount / totalMembers) * 100 : 0}%` }} />
-                    <div className="h-full bg-chlorophyll" style={{ width: `${totalMembers ? (greenlitCount / totalMembers) * 100 : 0}%` }} />
+                    <div className="h-full bg-status-cancelled/70 rounded-l-full" style={{ width: `${totalMembers ? (cancelCount / totalMembers) * 100 : 0}%` }} />
+                    <div className="h-full bg-status-approved/70" style={{ width: `${totalMembers ? (greenlitCount / totalMembers) * 100 : 0}%` }} />
                   </div>
                   <span className="font-mono">{greenlitCount}/{totalMembers} keep · {cancelCount} cancel</span>
                 </div>

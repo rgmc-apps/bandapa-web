@@ -549,11 +549,12 @@ export default function CalendarPage() {
                       const { col, cols } = layout.get(ev.id) ?? { col: 0, cols: 1 };
                       const widthPct = 100 / cols;
                       const leftPct = (col / cols) * 100;
+                      const evIsPast = new Date(ev.end_time) < new Date();
                       return (
                         <button
                           key={ev.id}
                           onClick={(e) => { e.stopPropagation(); setDetailEvent(ev); }}
-                          className={`absolute overflow-hidden text-left z-20 transition-[filter] hover:brightness-90 ${isBand ? "rounded-lg" : "rounded-md"}`}
+                          className={`absolute overflow-hidden text-left z-20 transition-[filter,opacity] hover:brightness-90 ${isBand ? "rounded-lg" : "rounded-md"}`}
                           style={{
                             top: `${top}px`,
                             height: `${height}px`,
@@ -561,6 +562,7 @@ export default function CalendarPage() {
                             width: `calc(${widthPct}% - ${cols > 1 ? 3 : 4}px)`,
                             background: isBand ? c.accent : `${c.accent}28`,
                             border: isBand ? "none" : `1.5px solid ${c.accent}70`,
+                            opacity: evIsPast ? 0.45 : 1,
                           }}
                         >
                           <div className="px-1.5 pt-1 pb-0.5 h-full flex flex-col justify-start overflow-hidden">
@@ -686,6 +688,7 @@ export default function CalendarPage() {
                         {dayEvs.slice(0, 2).map(ev => {
                           const c = getEventColor(ev);
                           const isBand = !!ev.band_id;
+                          const evIsPast = new Date(ev.end_time) < new Date();
                           return (
                             <div
                               key={ev.id}
@@ -693,12 +696,13 @@ export default function CalendarPage() {
                               tabIndex={0}
                               onClick={(e) => { e.stopPropagation(); setDetailEvent(ev); }}
                               onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.stopPropagation(); setDetailEvent(ev); } }}
-                              className="w-full rounded-[3px] text-[9px] font-medium leading-none flex items-center gap-[3px] overflow-hidden px-[3px] py-[2px] cursor-pointer hover:brightness-95 transition-[filter]"
+                              className="w-full rounded-[3px] text-[9px] font-medium leading-none flex items-center gap-[3px] overflow-hidden px-[3px] py-[2px] cursor-pointer hover:brightness-95 transition-[filter,opacity]"
                               style={{
                                 background: isSelected
                                   ? "rgba(0,0,0,0.13)"
                                   : isBand ? `${c.accent}25` : `${PERSONAL_COLOR.accent}22`,
                                 color: isSelected ? "#1a1a1a" : isBand ? c.text : PERSONAL_COLOR.text,
+                                opacity: evIsPast ? 0.45 : 1,
                               }}>
                               <span
                                 className="w-[5px] h-[5px] rounded-full shrink-0"
