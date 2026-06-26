@@ -52,6 +52,13 @@ function JoinBandForm() {
       return;
     }
 
+    await supabase.from("band_log").insert({
+      band_id: preview.id,
+      user_id: user.id,
+      action: "joined",
+      actor_id: user.id,
+    });
+
     router.push(`/dashboard/bands/${preview.id}`);
   }
 

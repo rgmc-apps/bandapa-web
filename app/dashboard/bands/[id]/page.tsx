@@ -22,6 +22,23 @@ type ConflictRow = {
   personal_event: { id: string; title: string; owner_id: string } | null;
 };
 
+type BandPhoto = {
+  id: string;
+  url: string;
+  uploaded_by: string | null;
+  created_at: string;
+};
+
+type BandLogEntry = {
+  id: string;
+  action: "joined" | "removed" | "quit";
+  created_at: string;
+  user_id: string | null;
+  actor_id: string | null;
+  subject: { id: string; full_name: string | null; username: string; avatar_url: string | null } | null;
+  agent: { id: string; full_name: string | null; username: string } | null;
+};
+
 const GENRE_LIST = [
   "Rock", "Pop", "Jazz", "Hip-Hop", "R&B", "Electronic",
   "Classical", "Country", "Reggae", "Blues", "Metal", "Indie",
@@ -64,9 +81,15 @@ export default function BandDetailPage() {
   const [members, setMembers] = useState<MemberRow[]>([]);
   const [events, setEvents] = useState<BandEvent[]>([]);
   const [conflicts, setConflicts] = useState<ConflictRow[]>([]);
+  const [photos, setPhotos] = useState<BandPhoto[]>([]);
+  const [bandLog, setBandLog] = useState<BandLogEntry[]>([]);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [showPastEvents, setShowPastEvents] = useState(false);
+  const [slideIdx, setSlideIdx] = useState(0);
+  const [lightboxIdx, setLightboxIdx] = useState<number | null>(null);
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
+  const [deletingPhoto, setDeletingPhoto] = useState(false);
   const [copied, setCopied] = useState(false);
   const [copiedShare, setCopiedShare] = useState(false);
 
@@ -85,6 +108,8 @@ export default function BandDetailPage() {
 
   const imageInputRef = useRef<HTMLInputElement>(null);
   const bannerInputRef = useRef<HTMLInputElement>(null);
+  const sliderRef = useRef<HTMLDivElement>(null);
+  const galleryInputRef = useRef<HTMLInputElement>(null);
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -120,6 +145,21 @@ export default function BandDetailPage() {
     } else {
       setConflicts([]);
     }
+
+    const { data: photoRows } = await supabase
+      .from("band_photos")
+      .select("id, url, uploaded_by, created_at")
+      .eq("band_id", id)
+      .order("created_at", { ascending: true });
+    setPhotos((photoRows ?? []) as BandPhoto[]);
+
+    const { data: logRows } = await supabase
+      .from("band_log")
+      .select("id, action, created_at, user_id, actor_id, subject:user_id(id, full_name, username, avatar_url), agent:actor_id(id, full_name, username)")
+      .eq("band_id", id)
+      .order("created_at", { ascending: false })
+      .limit(50);
+    setBandLog((logRows ?? []) as unknown as BandLogEntry[]);
 
     setLoading(false);
   }, [supabase, id]);
@@ -230,6 +270,7 @@ export default function BandDetailPage() {
 
   async function handleRemoveMember(memberRow: MemberRow) {
     if (!confirm(`Remove ${memberRow.user.full_name || memberRow.user.username} from the band?`)) return;
+    await supabase.from("band_log").insert({ band_id: id, user_id: memberRow.user_id, action: "removed", actor_id: currentUserId });
     await supabase.from("band_members").delete().eq("id", memberRow.id);
     fetchData();
   }
@@ -237,6 +278,7 @@ export default function BandDetailPage() {
   async function handleLeave() {
     if (!myMembership) return;
     if (!confirm("Leave this band?")) return;
+    await supabase.from("band_log").insert({ band_id: id, user_id: currentUserId, action: "quit", actor_id: currentUserId });
     await supabase.from("band_members").delete().eq("id", myMembership.id);
     router.push("/dashboard/bands");
   }
@@ -268,6 +310,67 @@ export default function BandDetailPage() {
     }
   }
 
+  function goToSlide(idx: number) {
+    const el = sliderRef.current;
+    if (!el) return;
+    el.scrollTo({ left: el.clientWidth * idx, behavior: "smooth" });
+    setSlideIdx(idx);
+  }
+
+  function handleSliderScroll() {
+    const el = sliderRef.current;
+    if (!el) return;
+    const idx = Math.round(el.scrollLeft / el.clientWidth);
+    if (idx !== slideIdx) setSlideIdx(idx);
+  }
+
+  async function handlePhotoPick(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file || !currentUserId) return;
+    e.target.value = "";
+    setUploadingPhoto(true);
+    const ext = file.name.split(".").pop() ?? "jpg";
+    const filename = `${id}/gallery/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+    const { error: uploadErr } = await supabase.storage
+      .from("band-images")
+      .upload(filename, file, { contentType: file.type, upsert: false });
+    if (!uploadErr) {
+      const { data: { publicUrl } } = supabase.storage.from("band-images").getPublicUrl(filename);
+      await supabase.from("band_photos").insert({ band_id: id, url: publicUrl, uploaded_by: currentUserId });
+      const { data: photoRows } = await supabase
+        .from("band_photos").select("id, url, uploaded_by, created_at")
+        .eq("band_id", id).order("created_at", { ascending: true });
+      setPhotos((photoRows ?? []) as BandPhoto[]);
+    }
+    setUploadingPhoto(false);
+  }
+
+  async function handleDeletePhoto(photo: BandPhoto) {
+    if (!confirm("Delete this photo?")) return;
+    setDeletingPhoto(true);
+    const marker = "/band-images/";
+    const idx = photo.url.indexOf(marker);
+    const storagePath = idx >= 0 ? photo.url.slice(idx + marker.length) : "";
+    if (storagePath) await supabase.storage.from("band-images").remove([storagePath]);
+    await supabase.from("band_photos").delete().eq("id", photo.id);
+    setPhotos(prev => prev.filter(p => p.id !== photo.id));
+    setLightboxIdx(null);
+    setDeletingPhoto(false);
+  }
+
+  useEffect(() => {
+    if (lightboxIdx === null) return;
+    function onKey(e: KeyboardEvent) {
+      if (e.key === "Escape") { setLightboxIdx(null); return; }
+      if (e.key === "ArrowLeft")
+        setLightboxIdx(prev => prev !== null ? Math.max(0, prev - 1) : prev);
+      if (e.key === "ArrowRight")
+        setLightboxIdx(prev => prev !== null ? Math.min(photos.length - 1, prev + 1) : prev);
+    }
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [lightboxIdx, photos.length]);
+
   function handleImagePick(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -297,6 +400,8 @@ export default function BandDetailPage() {
     }
     setCropTarget(null);
   }
+
+  const lightboxPhoto = lightboxIdx !== null ? (photos[lightboxIdx] ?? null) : null;
 
   const now = new Date();
   const currentEvents = events.filter(e => new Date(e.start_time) <= now && new Date(e.end_time) >= now);
@@ -587,6 +692,152 @@ export default function BandDetailPage() {
         )}
       </div>
 
+      {/* Photos */}
+      <div className="card overflow-hidden mb-6">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-outline-variant/30">
+          <h2 className="font-headline font-semibold text-sm text-obsidian">
+            Photos{photos.length > 0 && <span className="font-mono font-normal text-xs text-on-surface-variant ml-2">{photos.length}</span>}
+          </h2>
+          {isAdmin && (
+            <label className={`cursor-pointer flex items-center gap-1.5 text-xs font-medium px-2.5 py-1.5 rounded-lg border border-outline-variant/60 text-on-surface-variant hover:bg-surface-mist transition-colors ${uploadingPhoto ? "opacity-50 pointer-events-none" : ""}`}>
+              <span className="material-symbols-outlined" style={{ fontSize: "14px" }}>
+                {uploadingPhoto ? "hourglass_empty" : "add_photo_alternate"}
+              </span>
+              {uploadingPhoto ? "Uploading…" : "Add photo"}
+              <input ref={galleryInputRef} type="file" className="hidden" accept="image/*" onChange={handlePhotoPick} disabled={uploadingPhoto} />
+            </label>
+          )}
+        </div>
+
+        {loading && photos.length === 0 ? (
+          <div className="aspect-video bg-surface-mist animate-pulse" />
+        ) : photos.length === 0 ? (
+          <div className="py-10 text-center">
+            <span className="material-symbols-outlined text-on-surface-variant/25" style={{ fontSize: "32px" }}>photo_library</span>
+            <p className="text-sm text-on-surface-variant mt-2">{isAdmin ? "Add the first photo of your band." : "No photos yet."}</p>
+          </div>
+        ) : (
+          <div className="relative">
+            {/* Scrollable track */}
+            <div
+              ref={sliderRef}
+              className="flex overflow-x-scroll snap-x snap-mandatory"
+              style={{ scrollbarWidth: "none" } as React.CSSProperties}
+              onScroll={handleSliderScroll}
+            >
+              {photos.map((photo, i) => (
+                <div
+                  key={photo.id}
+                  className="shrink-0 w-full snap-center aspect-video relative cursor-zoom-in overflow-hidden bg-obsidian/5"
+                  onClick={() => setLightboxIdx(i)}
+                >
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={photo.url} alt={`Band photo ${i + 1}`} className="w-full h-full object-cover" />
+                </div>
+              ))}
+            </div>
+
+            {/* Prev arrow */}
+            {slideIdx > 0 && (
+              <button
+                onClick={() => goToSlide(slideIdx - 1)}
+                className="absolute left-3 top-1/2 -translate-y-1/2 w-8 h-8 bg-black/50 hover:bg-black/70 text-white rounded-full flex items-center justify-center transition-colors"
+                aria-label="Previous photo"
+              >
+                <span className="material-symbols-outlined" style={{ fontSize: "18px" }}>chevron_left</span>
+              </button>
+            )}
+
+            {/* Next arrow */}
+            {slideIdx < photos.length - 1 && (
+              <button
+                onClick={() => goToSlide(slideIdx + 1)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 w-8 h-8 bg-black/50 hover:bg-black/70 text-white rounded-full flex items-center justify-center transition-colors"
+                aria-label="Next photo"
+              >
+                <span className="material-symbols-outlined" style={{ fontSize: "18px" }}>chevron_right</span>
+              </button>
+            )}
+
+            {/* Dots */}
+            {photos.length > 1 && (
+              <div className="absolute bottom-3 left-0 right-0 flex justify-center gap-1.5 pointer-events-none">
+                {photos.map((_, i) => (
+                  <button
+                    key={i}
+                    onClick={() => goToSlide(i)}
+                    className={`h-1.5 rounded-full transition-all duration-200 pointer-events-auto ${i === slideIdx ? "w-5 bg-white" : "w-1.5 bg-white/50"}`}
+                    aria-label={`Photo ${i + 1}`}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* Lightbox */}
+      {lightboxPhoto && (
+        <div
+          className="fixed inset-0 z-50 bg-black/92 flex items-center justify-center"
+          onClick={() => setLightboxIdx(null)}
+        >
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={lightboxPhoto.url}
+            alt="Band photo"
+            className="max-w-full max-h-full object-contain select-none"
+            onClick={e => e.stopPropagation()}
+          />
+
+          {/* Close */}
+          <button
+            onClick={() => setLightboxIdx(null)}
+            className="absolute top-4 right-4 w-9 h-9 bg-white/10 hover:bg-white/20 text-white rounded-full flex items-center justify-center transition-colors"
+            aria-label="Close"
+          >
+            <span className="material-symbols-outlined" style={{ fontSize: "18px" }}>close</span>
+          </button>
+
+          {/* Prev */}
+          {lightboxIdx! > 0 && (
+            <button
+              onClick={e => { e.stopPropagation(); setLightboxIdx(i => i !== null ? Math.max(0, i - 1) : i); }}
+              className="absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 bg-white/10 hover:bg-white/20 text-white rounded-full flex items-center justify-center transition-colors"
+              aria-label="Previous"
+            >
+              <span className="material-symbols-outlined" style={{ fontSize: "22px" }}>chevron_left</span>
+            </button>
+          )}
+
+          {/* Next */}
+          {lightboxIdx! < photos.length - 1 && (
+            <button
+              onClick={e => { e.stopPropagation(); setLightboxIdx(i => i !== null ? Math.min(photos.length - 1, i + 1) : i); }}
+              className="absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 bg-white/10 hover:bg-white/20 text-white rounded-full flex items-center justify-center transition-colors"
+              aria-label="Next"
+            >
+              <span className="material-symbols-outlined" style={{ fontSize: "22px" }}>chevron_right</span>
+            </button>
+          )}
+
+          {/* Counter + delete */}
+          <div className="absolute bottom-5 left-0 right-0 flex items-center justify-center gap-4">
+            <span className="text-white/60 text-xs font-mono">{(lightboxIdx! + 1)} / {photos.length}</span>
+            {isAdmin && (
+              <button
+                onClick={e => { e.stopPropagation(); handleDeletePhoto(lightboxPhoto); }}
+                disabled={deletingPhoto}
+                className="flex items-center gap-1.5 text-xs font-mono text-white/60 hover:text-error transition-colors disabled:opacity-40"
+              >
+                <span className="material-symbols-outlined" style={{ fontSize: "14px" }}>delete</span>
+                {deletingPhoto ? "Deleting…" : "Delete"}
+              </button>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* Schedule */}
       <div className="card p-6 mb-6">
         <div className="flex items-center justify-between mb-4">
@@ -734,6 +985,43 @@ export default function BandDetailPage() {
                 </div>
               </section>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* Activity log */}
+      {bandLog.length > 0 && (
+        <div className="card p-6 mb-6">
+          <h2 className="font-headline font-semibold text-sm text-obsidian mb-3">Activity</h2>
+          <div className="divide-y divide-outline-variant/20">
+            {bandLog.map(entry => {
+              const name = entry.subject?.full_name || (entry.subject ? `@${entry.subject.username}` : "Someone");
+              const agentName = entry.agent?.full_name || (entry.agent ? `@${entry.agent.username}` : null);
+              const isJoined = entry.action === "joined";
+              const isRemoved = entry.action === "removed";
+              return (
+                <div key={entry.id} className="flex items-start gap-3 py-3 first:pt-0 last:pb-0">
+                  <div className={`w-7 h-7 rounded-full flex items-center justify-center shrink-0 mt-0.5 ${
+                    isJoined ? "bg-primary/10" : isRemoved ? "bg-error/10" : "bg-surface-mist"
+                  }`}>
+                    <span className={`material-symbols-outlined ${isJoined ? "text-primary" : isRemoved ? "text-error" : "text-on-surface-variant"}`} style={{ fontSize: "14px" }}>
+                      {isJoined ? "person_add" : isRemoved ? "person_remove" : "logout"}
+                    </span>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm text-obsidian leading-snug">
+                      <span className="font-medium">{name}</span>
+                      {isJoined && " joined the band"}
+                      {entry.action === "quit" && " left the band"}
+                      {isRemoved && (
+                        <> was removed{agentName && entry.actor_id !== entry.user_id && <> by <span className="font-medium">{agentName}</span></>}</>
+                      )}
+                    </p>
+                    <p className="text-[10px] font-mono text-on-surface-variant/50 mt-0.5">{timeAgo(entry.created_at)}</p>
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </div>
       )}
