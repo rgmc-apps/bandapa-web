@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import type { Band, BandMember, Profile } from "@/lib/types";
+import type { Band, BandMember, Event, Profile } from "@/lib/types";
 import Modal from "@/components/Modal";
 import ImageCropper from "@/components/ImageCropper";
 import { getTransitionBand, setTransitionBand } from "@/lib/transition-store";
@@ -11,6 +11,16 @@ import { getTransitionBand, setTransitionBand } from "@/lib/transition-store";
 type CropTarget = { src: string; target: "cover" | "banner" } | null;
 
 type MemberRow = BandMember & { user: Profile };
+
+type BandEvent = Event & { venue: { id: string; name: string } | null };
+
+type ConflictRow = {
+  id: string;
+  status: "pending" | "cancelled" | "greenlit";
+  created_at: string;
+  band_event: { id: string; title: string; start_time: string; end_time: string } | null;
+  personal_event: { id: string; title: string; owner_id: string } | null;
+};
 
 const GENRE_LIST = [
   "Rock", "Pop", "Jazz", "Hip-Hop", "R&B", "Electronic",
@@ -28,6 +38,21 @@ const SOCIAL_PLATFORMS = [
   { key: "website",  label: "Website",    icon: "language"     },
 ] as const;
 
+const EVENT_TYPE_LABELS: Record<string, string> = {
+  band_rehearsal: "Rehearsal",
+  studio_recording: "Recording",
+  hangout: "Hangout",
+};
+
+function timeAgo(iso: string): string {
+  const diff = (Date.now() - new Date(iso).getTime()) / 1000;
+  if (diff < 60) return "just now";
+  if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
+  if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
+  if (diff < 86400 * 30) return `${Math.floor(diff / 86400)}d ago`;
+  return new Date(iso).toLocaleDateString(undefined, { month: "short", day: "numeric" });
+}
+
 export default function BandDetailPage() {
   const { id } = useParams<{ id: string }>();
   const supabase = createClient();
@@ -37,8 +62,11 @@ export default function BandDetailPage() {
 
   const [band, setBand] = useState<Band | null>(null);
   const [members, setMembers] = useState<MemberRow[]>([]);
+  const [events, setEvents] = useState<BandEvent[]>([]);
+  const [conflicts, setConflicts] = useState<ConflictRow[]>([]);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [showPastEvents, setShowPastEvents] = useState(false);
   const [copied, setCopied] = useState(false);
   const [copiedShare, setCopiedShare] = useState(false);
 
@@ -72,6 +100,26 @@ export default function BandDetailPage() {
       .eq("band_id", id)
       .order("joined_at", { ascending: true });
     setMembers((memberRows ?? []) as unknown as MemberRow[]);
+
+    const { data: eventRows } = await supabase
+      .from("events")
+      .select("*, venue:venue_id(id, name)")
+      .eq("band_id", id)
+      .order("start_time", { ascending: false });
+    const fetchedEvents = (eventRows ?? []) as unknown as BandEvent[];
+    setEvents(fetchedEvents);
+
+    if (fetchedEvents.length > 0) {
+      const eventIds = fetchedEvents.map(e => e.id);
+      const { data: conflictRows } = await supabase
+        .from("conflicts")
+        .select("id, status, created_at, band_event:band_event_id(id, title, start_time, end_time), personal_event:personal_event_id(id, title, owner_id)")
+        .in("band_event_id", eventIds)
+        .order("created_at", { ascending: false });
+      setConflicts((conflictRows ?? []) as unknown as ConflictRow[]);
+    } else {
+      setConflicts([]);
+    }
 
     setLoading(false);
   }, [supabase, id]);
@@ -248,6 +296,76 @@ export default function BandDetailPage() {
       setEditBannerPreview(preview);
     }
     setCropTarget(null);
+  }
+
+  const now = new Date();
+  const currentEvents = events.filter(e => new Date(e.start_time) <= now && new Date(e.end_time) >= now);
+  const upcomingEvents = events
+    .filter(e => new Date(e.start_time) > now)
+    .sort((a, b) => new Date(a.start_time).getTime() - new Date(b.start_time).getTime());
+  const pastEvents = events
+    .filter(e => new Date(e.end_time) < now)
+    .sort((a, b) => new Date(b.start_time).getTime() - new Date(a.start_time).getTime());
+
+  const activeConflicts = conflicts.filter(c => c.status === "pending");
+  const resolvedConflicts = conflicts.filter(c => c.status !== "pending");
+
+  function formatEventDate(ev: BandEvent): string {
+    const start = new Date(ev.start_time);
+    const end = new Date(ev.end_time);
+    const dateStr = start.toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" });
+    if (ev.is_all_day) return `${dateStr} · All day`;
+    const startTime = start.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
+    const endTime = end.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
+    return `${dateStr} · ${startTime} – ${endTime}`;
+  }
+
+  function getMemberName(ownerId: string): string {
+    const m = members.find(m => m.user_id === ownerId);
+    return m ? (m.user.full_name || `@${m.user.username}`) : "A member";
+  }
+
+  function renderEventRow(ev: BandEvent, kind: "current" | "upcoming" | "past") {
+    const isPast = kind === "past";
+    const isCurrent = kind === "current";
+    return (
+      <div
+        key={ev.id}
+        className={`flex items-start gap-3 px-3 py-2.5 rounded-lg ${
+          isCurrent
+            ? "bg-primary/5 ring-1 ring-primary/15"
+            : isPast
+            ? "opacity-55"
+            : "hover:bg-surface-mist/60 transition-colors"
+        }`}
+      >
+        {isCurrent && (
+          <span className="relative flex h-2 w-2 shrink-0 mt-[7px]">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary/50" />
+            <span className="relative inline-flex rounded-full h-2 w-2 bg-primary" />
+          </span>
+        )}
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-1.5 flex-wrap">
+            <p className={`text-sm font-medium truncate ${isPast ? "text-on-surface-variant" : "text-obsidian"}`}>
+              {ev.title}
+            </p>
+            {EVENT_TYPE_LABELS[ev.event_type] && (
+              <span className="text-[9px] font-mono px-1.5 py-[2px] rounded-full bg-surface-mist text-on-surface-variant shrink-0">
+                {EVENT_TYPE_LABELS[ev.event_type]}
+              </span>
+            )}
+          </div>
+          <p className="text-xs text-on-surface-variant mt-0.5">{formatEventDate(ev)}</p>
+          {ev.venue?.name && (
+            <p className="text-xs text-on-surface-variant/60 mt-0.5 flex items-center gap-1">
+              <span className="material-symbols-outlined" style={{ fontSize: "11px" }}>location_on</span>
+              {ev.venue.name}
+            </p>
+          )}
+        </div>
+      </div>
+    );
   }
 
   if (loading && !cached && !band) {
@@ -468,6 +586,157 @@ export default function BandDetailPage() {
           </ul>
         )}
       </div>
+
+      {/* Schedule */}
+      <div className="card p-6 mb-6">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="font-headline font-semibold text-sm text-obsidian">Schedule</h2>
+          {events.length > 0 && (
+            <span className="text-xs font-mono text-on-surface-variant">{events.length} total</span>
+          )}
+        </div>
+
+        {loading && events.length === 0 ? (
+          <div className="space-y-2">
+            {[0, 1].map(i => (
+              <div key={i} className="h-12 band-skeleton rounded-lg" style={{ animationDelay: `${i * 60}ms` }} />
+            ))}
+          </div>
+        ) : events.length === 0 ? (
+          <div className="py-6 text-center">
+            <span className="material-symbols-outlined text-on-surface-variant/30" style={{ fontSize: "28px" }}>calendar_today</span>
+            <p className="text-sm text-on-surface-variant mt-2">No scheduled events yet.</p>
+          </div>
+        ) : (
+          <div className="space-y-5">
+            {currentEvents.length > 0 && (
+              <section>
+                <p className="text-[10px] font-mono font-semibold text-primary uppercase tracking-[0.08em] mb-2 flex items-center gap-1.5">
+                  <span className="relative flex h-1.5 w-1.5 shrink-0">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary/50" />
+                    <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-primary" />
+                  </span>
+                  Now
+                </p>
+                <div className="space-y-1.5">{currentEvents.map(ev => renderEventRow(ev, "current"))}</div>
+              </section>
+            )}
+
+            {upcomingEvents.length > 0 && (
+              <section>
+                <p className="text-[10px] font-mono font-semibold text-on-surface-variant/50 uppercase tracking-[0.08em] mb-2">
+                  Upcoming · {upcomingEvents.length}
+                </p>
+                <div className="space-y-1.5">{upcomingEvents.map(ev => renderEventRow(ev, "upcoming"))}</div>
+              </section>
+            )}
+
+            {pastEvents.length > 0 && (
+              <section>
+                <button
+                  className="text-[10px] font-mono font-semibold text-on-surface-variant/50 uppercase tracking-[0.08em] flex items-center gap-1 w-full hover:text-on-surface-variant transition-colors mb-2"
+                  onClick={() => setShowPastEvents(p => !p)}
+                >
+                  Past · {pastEvents.length}
+                  <span className="material-symbols-outlined ml-auto" style={{ fontSize: "14px" }}>
+                    {showPastEvents ? "expand_less" : "expand_more"}
+                  </span>
+                </button>
+                {showPastEvents && (
+                  <div className="space-y-1.5">{pastEvents.map(ev => renderEventRow(ev, "past"))}</div>
+                )}
+              </section>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* Conflicts */}
+      {conflicts.length > 0 && (
+        <div className="card p-6 mb-6">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="font-headline font-semibold text-sm text-obsidian">Conflicts</h2>
+            {activeConflicts.length > 0 && (
+              <span className="text-xs font-mono px-2 py-0.5 bg-error/10 text-error rounded-full">
+                {activeConflicts.length} pending
+              </span>
+            )}
+          </div>
+
+          <div className="space-y-5">
+            {activeConflicts.length > 0 && (
+              <section>
+                <p className="text-[10px] font-mono font-semibold text-error/70 uppercase tracking-[0.08em] mb-2.5">
+                  Active · {activeConflicts.length}
+                </p>
+                <div className="space-y-2">
+                  {activeConflicts.map(c => (
+                    <div key={c.id} className="flex items-start gap-3 p-3.5 rounded-xl border border-error/20 bg-error/5">
+                      <span className="material-symbols-outlined text-error/70 shrink-0 mt-0.5" style={{ fontSize: "16px" }}>warning</span>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-obsidian">
+                          {getMemberName(c.personal_event?.owner_id ?? "")} has a scheduling conflict
+                        </p>
+                        <p className="text-xs text-on-surface-variant mt-0.5 truncate">
+                          <span className="font-medium">{c.band_event?.title ?? "Band event"}</span>
+                          {" overlaps with "}
+                          <span className="font-medium">{c.personal_event?.title ?? "personal event"}</span>
+                        </p>
+                        {c.band_event?.start_time && (
+                          <p className="text-xs text-on-surface-variant/60 mt-1">
+                            {new Date(c.band_event.start_time).toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" })}
+                            {" · "}
+                            {timeAgo(c.created_at)}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </section>
+            )}
+
+            {resolvedConflicts.length > 0 && (
+              <section>
+                <p className="text-[10px] font-mono font-semibold text-on-surface-variant/50 uppercase tracking-[0.08em] mb-2.5">
+                  Resolved · {resolvedConflicts.length}
+                </p>
+                <div className="space-y-1.5">
+                  {resolvedConflicts.map(c => (
+                    <div key={c.id} className="flex items-center gap-3 px-3 py-2 rounded-lg">
+                      <span
+                        className={`material-symbols-outlined shrink-0 ${c.status === "greenlit" ? "text-primary" : "text-on-surface-variant/40"}`}
+                        style={{ fontSize: "16px" }}
+                      >
+                        {c.status === "greenlit" ? "check_circle" : "cancel"}
+                      </span>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs text-on-surface-variant truncate">
+                          <span className="font-medium text-obsidian">{c.band_event?.title ?? "Event"}</span>
+                          {" · "}
+                          {getMemberName(c.personal_event?.owner_id ?? "")}
+                        </p>
+                        {c.band_event?.start_time && (
+                          <p className="text-[10px] text-on-surface-variant/50 mt-0.5">
+                            {new Date(c.band_event.start_time).toLocaleDateString(undefined, { month: "short", day: "numeric" })}
+                          </p>
+                        )}
+                      </div>
+                      <span className={`text-[9px] font-mono px-1.5 py-[2px] rounded-full shrink-0 ${
+                        c.status === "greenlit"
+                          ? "bg-primary/10 text-primary"
+                          : "bg-surface-mist text-on-surface-variant"
+                      }`}>
+                        {c.status}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </section>
+            )}
+          </div>
+        </div>
+      )}
 
       {myMembership && !isOwner && (
         <button onClick={handleLeave} className="btn-danger">Leave band</button>
