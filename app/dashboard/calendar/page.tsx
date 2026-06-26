@@ -65,11 +65,43 @@ function formatHour(h: number) {
 }
 function eventTopPx(e: Event) {
   const d = new Date(e.start_time);
+  if (isNaN(d.getTime())) return 0;
   return (d.getHours() + d.getMinutes() / 60) * HOUR_HEIGHT;
 }
 function eventHeightPx(e: Event) {
-  const diff = (new Date(e.end_time).getTime() - new Date(e.start_time).getTime()) / 3600000;
-  return Math.max(diff * HOUR_HEIGHT, HOUR_HEIGHT * 0.45);
+  const startMs = new Date(e.start_time).getTime();
+  const endMs = new Date(e.end_time).getTime();
+  if (isNaN(startMs) || isNaN(endMs) || endMs <= startMs) return HOUR_HEIGHT * 0.45;
+  return Math.max((endMs - startMs) / 3600000 * HOUR_HEIGHT, HOUR_HEIGHT * 0.45);
+}
+function computeColumns(events: Event[]): Map<string, { col: number; cols: number }> {
+  const result = new Map<string, { col: number; cols: number }>();
+  if (events.length === 0) return result;
+  const sorted = [...events].sort((a, b) =>
+    new Date(a.start_time).getTime() - new Date(b.start_time).getTime()
+  );
+  const colEnds: number[] = [];
+  for (const ev of sorted) {
+    const start = new Date(ev.start_time).getTime();
+    const end = new Date(ev.end_time).getTime();
+    let col = colEnds.findIndex(t => t <= start);
+    if (col === -1) { col = colEnds.length; colEnds.push(end); }
+    else colEnds[col] = end;
+    result.set(ev.id, { col, cols: 0 });
+  }
+  for (const ev of events) {
+    const start = new Date(ev.start_time).getTime();
+    const end = new Date(ev.end_time).getTime();
+    let maxCol = result.get(ev.id)!.col;
+    for (const other of events) {
+      if (other.id === ev.id) continue;
+      const os = new Date(other.start_time).getTime();
+      const oe = new Date(other.end_time).getTime();
+      if (start < oe && end > os) maxCol = Math.max(maxCol, result.get(other.id)!.col);
+    }
+    result.set(ev.id, { col: result.get(ev.id)!.col, cols: maxCol + 1 });
+  }
+  return result;
 }
 
 export default function CalendarPage() {
@@ -97,6 +129,13 @@ export default function CalendarPage() {
   const [memberConflicts, setMemberConflicts] = useState<MemberConflictRow[]>([]);
   const [checkingConflicts, setCheckingConflicts] = useState(false);
   const conflictTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const [loading, setLoading] = useState(true);
+  const [fetchError, setFetchError] = useState<string | null>(null);
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [editingEvent, setEditingEvent] = useState<Event | null>(null);
+  const fetchTokenRef = useRef<{ cancelled: boolean }>({ cancelled: false });
 
   const timeGridRef = useRef<HTMLDivElement>(null);
 
@@ -127,28 +166,49 @@ export default function CalendarPage() {
   }, [viewMode, viewYear, viewMonth, weekStart, selectedDate]);
 
   const fetchEvents = useCallback(async () => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
-    setUserId(user.id);
-    const { data: memberRows } = await supabase.from("band_members").select("band:bands(*)").eq("user_id", user.id);
-    setBands((memberRows ?? []).map((r) => r.band).filter(Boolean) as unknown as Band[]);
-    const { data: venueRows } = await supabase.from("venues").select("*").order("name");
-    setVenues(venueRows ?? []);
-    const { data: eventRows } = await supabase
-      .from("events").select("*")
-      .lt("start_time", fetchRange.end)
-      .gte("end_time", fetchRange.start)
-      .order("start_time");
-    setEvents(eventRows ?? []);
+    const token = { cancelled: false };
+    fetchTokenRef.current = token;
+    setLoading(true);
+    setFetchError(null);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user || token.cancelled) { setLoading(false); return; }
+      setUserId(user.id);
+      const { data: memberRows } = await supabase.from("band_members").select("band:bands(*)").eq("user_id", user.id);
+      if (token.cancelled) return;
+      setBands((memberRows ?? []).map((r) => r.band).filter(Boolean) as unknown as Band[]);
+      const { data: venueRows } = await supabase.from("venues").select("*").order("name");
+      if (token.cancelled) return;
+      setVenues(venueRows ?? []);
+      const { data: eventRows, error: evErr } = await supabase
+        .from("events").select("*")
+        .lt("start_time", fetchRange.end)
+        .gte("end_time", fetchRange.start)
+        .order("start_time");
+      if (token.cancelled) return;
+      if (evErr) throw evErr;
+      setEvents(eventRows ?? []);
+    } catch {
+      if (!token.cancelled) setFetchError("Failed to load events. Check your connection and try again.");
+    } finally {
+      if (!token.cancelled) setLoading(false);
+    }
   }, [supabase, fetchRange]);
 
-  useEffect(() => { fetchEvents(); }, [fetchEvents]);
+  useEffect(() => {
+    fetchEvents();
+    return () => { fetchTokenRef.current.cancelled = true; };
+  }, [fetchEvents]);
 
   useEffect(() => {
     if ((viewMode === "week" || viewMode === "day") && timeGridRef.current) {
       setTimeout(() => { if (timeGridRef.current) timeGridRef.current.scrollTop = 8 * HOUR_HEIGHT; }, 60);
     }
   }, [viewMode]);
+
+  useEffect(() => {
+    if (!detailEvent) setConfirmDelete(false);
+  }, [detailEvent]);
 
   // ── Real-time conflict check while filling the form ───────────────────────────
   useEffect(() => {
@@ -284,10 +344,31 @@ export default function CalendarPage() {
 
   function getDayEvents(date: Date) { return eventsByDay.get(toDateKey(date)) ?? []; }
 
-  // ── Create event ─────────────────────────────────────────────────────────────
+  // ── Create / edit event ───────────────────────────────────────────────────────
   function openAdd() {
     const dateKey = toDateKey(selectedDate);
     setForm({ ...emptyForm, start_date: dateKey, end_date: dateKey });
+    setEditingEvent(null);
+    setError(""); setConflictWarnings([]); setMemberConflicts([]); setAddOpen(true);
+  }
+
+  function openEdit(ev: Event) {
+    const start = new Date(ev.start_time);
+    const end   = new Date(ev.end_time);
+    setForm({
+      title:       ev.title,
+      is_all_day:  ev.is_all_day,
+      start_date:  toDateKey(start),
+      end_date:    toDateKey(end),
+      start_time:  `${String(start.getHours()).padStart(2, "0")}:${String(start.getMinutes()).padStart(2, "0")}`,
+      end_time:    `${String(end.getHours()).padStart(2, "0")}:${String(end.getMinutes()).padStart(2, "0")}`,
+      band_id:     ev.band_id ?? "",
+      venue_id:    ev.venue_id ?? "",
+      location:    ev.location ?? "",
+      description: ev.description ?? "",
+    });
+    setEditingEvent(ev);
+    setDetailEvent(null);
     setError(""); setConflictWarnings([]); setMemberConflicts([]); setAddOpen(true);
   }
 
@@ -314,13 +395,36 @@ export default function CalendarPage() {
     } else {
       await detectBandEventConflicts(supabase, created as Event);
     }
-    setAddOpen(false); setSaving(false); fetchEvents();
+    setAddOpen(false); setEditingEvent(null); setSaving(false); fetchEvents();
+  }
+
+  async function handleUpdateEvent() {
+    if (!editingEvent || !form.title.trim() || !userId) return;
+    setSaving(true); setError("");
+    if (!form.start_date || !form.end_date) { setError("Please select a date."); setSaving(false); return; }
+    if (form.end_date < form.start_date) { setError("End date must be on or after start date."); setSaving(false); return; }
+    if (!form.is_all_day && form.start_date === form.end_date && form.end_time <= form.start_time) {
+      setError("End time must be after start time."); setSaving(false); return;
+    }
+    const start = form.is_all_day ? `${form.start_date}T00:00:00` : `${form.start_date}T${form.start_time}:00`;
+    const end   = form.is_all_day ? `${form.end_date}T23:59:59`   : `${form.end_date}T${form.end_time}:00`;
+    const isMultiDay = form.start_date !== form.end_date;
+    const { error: err } = await supabase.from("events").update({
+      title: form.title.trim(), event_type: form.band_id ? "band_rehearsal" : "personal",
+      band_id: form.band_id || null, venue_id: form.venue_id || null,
+      start_time: new Date(start).toISOString(), end_time: new Date(end).toISOString(),
+      is_all_day: form.is_all_day || isMultiDay, location: form.location || null, description: form.description || null,
+    }).eq("id", editingEvent.id);
+    if (err) { setError(err.message); setSaving(false); return; }
+    setAddOpen(false); setEditingEvent(null); setSaving(false); fetchEvents();
   }
 
   async function handleDeleteEvent(id: string) {
-    if (!confirm("Delete this event?")) return;
+    setDeleting(true);
     await supabase.from("events").delete().eq("id", id);
-    setDetailEvent(null); fetchEvents();
+    setDetailEvent(null);
+    setDeleting(false);
+    fetchEvents();
   }
 
   // ── Time grid (shared by week + day) ─────────────────────────────────────────
@@ -359,8 +463,9 @@ export default function CalendarPage() {
                   const isBand = !!ev.band_id;
                   return (
                     <button key={ev.id} onClick={(e) => { e.stopPropagation(); setDetailEvent(ev); }}
-                      className="w-full text-left rounded-md px-1.5 py-0.5 text-xs font-semibold truncate transition-[filter] hover:brightness-90"
-                      style={{ background: isBand ? c.accent : c.bg, color: isBand ? "#fff" : c.text }}>
+                      className="w-full text-left rounded-[3px] px-1.5 py-[3px] text-[10px] font-medium truncate flex items-center gap-1.5 transition-[filter] hover:brightness-90"
+                      style={{ background: isBand ? c.accent : `${c.accent}25`, color: isBand ? "#fff" : c.text }}>
+                      {!isBand && <span className="w-[5px] h-[5px] rounded-full shrink-0" style={{ background: c.accent }} />}
                       {ev.title}
                     </button>
                   );
@@ -434,43 +539,51 @@ export default function CalendarPage() {
                   )}
 
                   {/* Events */}
-                  {timedEvents.map(ev => {
-                    const c = getEventColor(ev);
-                    const isBand = !!ev.band_id;
-                    const top = eventTopPx(ev);
-                    const height = eventHeightPx(ev);
-                    return (
-                      <button
-                        key={ev.id}
-                        onClick={(e) => { e.stopPropagation(); setDetailEvent(ev); }}
-                        className={`absolute left-0.5 right-0.5 overflow-hidden text-left z-20 transition-[filter,transform] hover:brightness-90 hover:scale-[1.01] ${isBand ? "rounded-lg" : "rounded-xl"}`}
-                        style={{
-                          top: `${top}px`,
-                          height: `${height}px`,
-                          background: isBand ? c.accent : c.bg,
-                          border: isBand ? "none" : `1.5px solid ${c.accent}35`,
-                        }}
-                      >
-                        <div className="px-1.5 pt-1 pb-0.5 h-full flex flex-col justify-start">
-                          {isBand && height > 26 && (
-                            <p className="text-[8px] font-mono text-white/65 truncate leading-none mb-0.5">
-                              {bandById.get(ev.band_id!)?.name ?? ""}
+                  {(() => {
+                    const layout = computeColumns(timedEvents);
+                    return timedEvents.map(ev => {
+                      const c = getEventColor(ev);
+                      const isBand = !!ev.band_id;
+                      const top = eventTopPx(ev);
+                      const height = eventHeightPx(ev);
+                      const { col, cols } = layout.get(ev.id) ?? { col: 0, cols: 1 };
+                      const widthPct = 100 / cols;
+                      const leftPct = (col / cols) * 100;
+                      return (
+                        <button
+                          key={ev.id}
+                          onClick={(e) => { e.stopPropagation(); setDetailEvent(ev); }}
+                          className={`absolute overflow-hidden text-left z-20 transition-[filter] hover:brightness-90 ${isBand ? "rounded-lg" : "rounded-md"}`}
+                          style={{
+                            top: `${top}px`,
+                            height: `${height}px`,
+                            left: `calc(${leftPct}% + 2px)`,
+                            width: `calc(${widthPct}% - ${cols > 1 ? 3 : 4}px)`,
+                            background: isBand ? c.accent : `${c.accent}28`,
+                            border: isBand ? "none" : `1.5px solid ${c.accent}70`,
+                          }}
+                        >
+                          <div className="px-1.5 pt-1 pb-0.5 h-full flex flex-col justify-start overflow-hidden">
+                            {isBand && height > 26 && (
+                              <p className="text-[9px] font-mono text-white/70 truncate leading-none mb-0.5">
+                                {bandById.get(ev.band_id!)?.name ?? ""}
+                              </p>
+                            )}
+                            <p className="text-[11px] font-semibold leading-tight truncate"
+                              style={{ color: isBand ? "#fff" : c.text }}>
+                              {ev.title}
                             </p>
-                          )}
-                          <p className={`text-xs font-semibold leading-tight truncate ${isBand ? "text-white" : ""}`}
-                            style={!isBand ? { color: c.text } : undefined}>
-                            {ev.title}
-                          </p>
-                          {height > 42 && (
-                            <p className={`text-[10px] font-mono mt-auto leading-none ${isBand ? "text-white/65" : ""}`}
-                              style={!isBand ? { color: c.accent } : undefined}>
-                              {new Date(ev.start_time).toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" })}
-                            </p>
-                          )}
-                        </div>
-                      </button>
-                    );
-                  })}
+                            {height > 44 && (
+                              <p className="text-[10px] font-mono mt-auto leading-none"
+                                style={{ color: isBand ? "rgba(255,255,255,0.65)" : c.accent }}>
+                                {new Date(ev.start_time).toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" })}
+                              </p>
+                            )}
+                          </div>
+                        </button>
+                      );
+                    });
+                  })()}
                 </div>
               );
             })}
@@ -510,24 +623,36 @@ export default function CalendarPage() {
 
       {/* Navigation */}
       <div className="flex items-center justify-between mb-4">
-        <button onClick={prevPeriod} className="p-2 hover:bg-surface-mist rounded-lg transition-colors">
+        <button onClick={prevPeriod} className="p-2 hover:bg-surface-mist rounded-lg transition-colors" aria-label="Previous period">
           <span className="material-symbols-outlined" style={{ fontSize: "20px" }}>chevron_left</span>
         </button>
         <div className="flex items-center gap-2">
           <h2 className="font-headline font-semibold text-obsidian">{getPeriodLabel()}</h2>
+          {loading && (
+            <span className="w-3.5 h-3.5 rounded-full border-2 border-primary/40 border-t-primary animate-spin shrink-0" />
+          )}
           <button onClick={goToday} className="text-xs font-mono text-primary border border-primary/30 rounded px-2 py-0.5 hover:bg-primary/5 transition-colors">
             Today
           </button>
         </div>
-        <button onClick={nextPeriod} className="p-2 hover:bg-surface-mist rounded-lg transition-colors">
+        <button onClick={nextPeriod} className="p-2 hover:bg-surface-mist rounded-lg transition-colors" aria-label="Next period">
           <span className="material-symbols-outlined" style={{ fontSize: "20px" }}>chevron_right</span>
         </button>
       </div>
 
+      {/* Fetch error state */}
+      {fetchError && !loading && (
+        <div className="card p-8 mb-4 flex flex-col items-center gap-3 text-center">
+          <span className="material-symbols-outlined text-on-surface-variant/50" style={{ fontSize: "32px" }}>cloud_off</span>
+          <p className="text-sm text-on-surface-variant">{fetchError}</p>
+          <button className="btn-secondary text-sm" onClick={fetchEvents}>Try again</button>
+        </div>
+      )}
+
       {/* Month view */}
       {viewMode === "month" && (
         <>
-          <div className="card p-4 mb-5" style={{ viewTransitionName: "cal-grid" }}>
+          <div className={`card p-4 mb-5 transition-opacity duration-200 ${loading && events.length === 0 ? "opacity-50 pointer-events-none" : ""}`} style={{ viewTransitionName: "cal-grid" }}>
             <div className="grid grid-cols-7 gap-1 mb-1">
               {WEEKDAY_LABELS.map((d, i) => (
                 <div key={i} className="text-center text-xs font-mono text-on-surface-variant py-1">{d}</div>
@@ -541,7 +666,11 @@ export default function CalendarPage() {
                 const isSelected = toDateKey(selectedDate) === key;
                 const isToday = todayKey === key;
                 return (
-                  <button key={i} onClick={() => setSelectedDate(date)}
+                  <button
+                    key={i}
+                    onClick={() => setSelectedDate(date)}
+                    aria-label={`${date.toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" })}${dayEvs.length > 0 ? `, ${dayEvs.length} event${dayEvs.length !== 1 ? "s" : ""}` : ""}`}
+                    aria-pressed={toDateKey(selectedDate) === key}
                     className={`relative min-h-[56px] rounded-xl flex flex-col p-1.5 text-left transition-all duration-150 ${
                       isSelected
                         ? "bg-chlorophyll shadow-sm"
@@ -553,26 +682,35 @@ export default function CalendarPage() {
                       isSelected ? "font-bold text-obsidian" : isToday ? "font-bold text-primary" : "text-obsidian"
                     }`}>{date.getDate()}</span>
                     {dayEvs.length > 0 && (
-                      <div className="w-full space-y-px min-w-0">
+                      <div className="w-full space-y-[3px] min-w-0">
                         {dayEvs.slice(0, 2).map(ev => {
                           const c = getEventColor(ev);
                           const isBand = !!ev.band_id;
                           return (
-                            <div key={ev.id}
-                              className="w-full rounded text-[8px] font-mono px-1 py-px leading-none truncate"
+                            <div
+                              key={ev.id}
+                              role="button"
+                              tabIndex={0}
+                              onClick={(e) => { e.stopPropagation(); setDetailEvent(ev); }}
+                              onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.stopPropagation(); setDetailEvent(ev); } }}
+                              className="w-full rounded-[3px] text-[9px] font-medium leading-none flex items-center gap-[3px] overflow-hidden px-[3px] py-[2px] cursor-pointer hover:brightness-95 transition-[filter]"
                               style={{
                                 background: isSelected
-                                  ? "rgba(0,0,0,0.12)"
-                                  : isBand ? `${c.accent}22` : `${PERSONAL_COLOR.accent}1a`,
+                                  ? "rgba(0,0,0,0.13)"
+                                  : isBand ? `${c.accent}25` : `${PERSONAL_COLOR.accent}22`,
                                 color: isSelected ? "#1a1a1a" : isBand ? c.text : PERSONAL_COLOR.text,
                               }}>
-                              {ev.title}
+                              <span
+                                className="w-[5px] h-[5px] rounded-full shrink-0"
+                                style={{ background: isSelected ? (isBand ? c.accent : PERSONAL_COLOR.accent) : c.accent }}
+                              />
+                              <span className="truncate">{ev.title}</span>
                             </div>
                           );
                         })}
                         {dayEvs.length > 2 && (
-                          <span className={`text-[8px] font-mono pl-1 ${isSelected ? "text-obsidian/60" : "text-on-surface-variant/50"}`}>
-                            +{dayEvs.length - 2}
+                          <span className={`text-[9px] font-mono pl-1 ${isSelected ? "text-obsidian/60" : "text-on-surface-variant/50"}`}>
+                            +{dayEvs.length - 2} more
                           </span>
                         )}
                       </div>
@@ -639,12 +777,12 @@ export default function CalendarPage() {
         </div>
       )}
 
-      {/* New Event Modal */}
-      <Modal title="New Event" open={addOpen} onClose={() => setAddOpen(false)}>
+      {/* New / Edit Event Modal */}
+      <Modal title={editingEvent ? "Edit Event" : "New Event"} open={addOpen} onClose={() => { setAddOpen(false); setEditingEvent(null); }}>
         <div className="p-6 space-y-4">
           <div>
             <label className="label-field">Title *</label>
-            <input className="input-field" value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} placeholder="Rehearsal, gig, hangout…" />
+            <input className="input-field" value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} placeholder="Rehearsal, gig, hangout…" maxLength={120} />
           </div>
 
           {/* Date range */}
@@ -688,9 +826,12 @@ export default function CalendarPage() {
 
           {/* All day + times */}
           <div className="space-y-3">
-            <label className="flex items-center gap-2.5 cursor-pointer select-none group">
+            <label className="flex items-center gap-2.5 cursor-pointer select-none group" onClick={() => setForm((f) => ({ ...f, is_all_day: !f.is_all_day }))}>
               <div
-                onClick={() => setForm((f) => ({ ...f, is_all_day: !f.is_all_day }))}
+                role="checkbox"
+                aria-checked={form.is_all_day}
+                tabIndex={0}
+                onKeyDown={(e) => { if (e.key === " " || e.key === "Enter") { e.preventDefault(); setForm((f) => ({ ...f, is_all_day: !f.is_all_day })); } }}
                 className={`w-[18px] h-[18px] rounded-[5px] border flex items-center justify-center shrink-0 transition-all duration-150 cursor-pointer ${
                   form.is_all_day
                     ? "bg-primary border-primary"
@@ -740,11 +881,11 @@ export default function CalendarPage() {
           </div>
           <div>
             <label className="label-field">Location</label>
-            <input className="input-field" value={form.location} onChange={(e) => setForm({ ...form, location: e.target.value })} placeholder="Free-text location" />
+            <input className="input-field" value={form.location} onChange={(e) => setForm({ ...form, location: e.target.value })} placeholder="Free-text location" maxLength={250} />
           </div>
           <div>
             <label className="label-field">Description</label>
-            <textarea className="input-field min-h-[64px] resize-y" value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} />
+            <textarea className="input-field min-h-[64px] resize-y" value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} maxLength={2000} />
           </div>
           {/* Conflict warnings */}
           {checkingConflicts && (
@@ -821,13 +962,17 @@ export default function CalendarPage() {
 
           {error && <p className="text-error text-sm">{error}</p>}
           <div className="flex justify-end gap-3 pt-2">
-            <button className="btn-secondary" onClick={() => setAddOpen(false)}>Cancel</button>
+            <button className="btn-secondary" onClick={() => { setAddOpen(false); setEditingEvent(null); }}>Cancel</button>
             <button
               className={(conflictWarnings.length > 0 || memberConflicts.length > 0) ? "btn-danger" : "btn-primary"}
-              onClick={handleCreateEvent}
+              onClick={editingEvent ? handleUpdateEvent : handleCreateEvent}
               disabled={saving || !form.title.trim()}
             >
-              {saving ? "Saving…" : (conflictWarnings.length > 0 || memberConflicts.length > 0) ? "Save Anyway" : "Add Event"}
+              {saving
+                ? "Saving…"
+                : editingEvent
+                  ? "Save Changes"
+                  : (conflictWarnings.length > 0 || memberConflicts.length > 0) ? "Save Anyway" : "Add Event"}
             </button>
           </div>
         </div>
@@ -861,9 +1006,26 @@ export default function CalendarPage() {
             )}
             {detailEvent.description && <p className="text-obsidian pt-1">{detailEvent.description}</p>}
             {detailEvent.owner_id === userId && (
-              <button className="btn-danger w-full justify-center mt-4" onClick={() => handleDeleteEvent(detailEvent.id)}>
-                Delete event
-              </button>
+              confirmDelete ? (
+                <div className="rounded-xl border border-error/20 bg-error-container/40 p-4 mt-4 space-y-3">
+                  <p className="text-sm font-medium text-error">Delete this event? This cannot be undone.</p>
+                  <div className="flex gap-2">
+                    <button className="btn-secondary flex-1 justify-center" onClick={() => setConfirmDelete(false)} disabled={deleting}>Cancel</button>
+                    <button className="btn-danger flex-1 justify-center" onClick={() => handleDeleteEvent(detailEvent.id)} disabled={deleting}>
+                      {deleting ? "Deleting…" : "Delete"}
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex flex-col gap-2 mt-4">
+                  <button className="btn-secondary w-full justify-center" onClick={() => openEdit(detailEvent)}>
+                    Edit event
+                  </button>
+                  <button className="btn-danger w-full justify-center" onClick={() => setConfirmDelete(true)}>
+                    Delete event
+                  </button>
+                </div>
+              )
             )}
           </div>
         )}

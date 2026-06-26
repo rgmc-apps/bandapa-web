@@ -33,6 +33,19 @@ function timeAgo(iso: string) {
   return `${Math.floor(diff / 86400)}d ago`;
 }
 
+const SEEN_KEY = "bandapa_seen_notifs";
+
+function readSeenIds(): Set<string> {
+  try {
+    const raw = localStorage.getItem(SEEN_KEY);
+    return new Set(raw ? (JSON.parse(raw) as string[]) : []);
+  } catch { return new Set(); }
+}
+
+function writeSeenIds(ids: Set<string>) {
+  try { localStorage.setItem(SEEN_KEY, JSON.stringify([...ids])); } catch {}
+}
+
 export default function NotificationBell({ dark = false }: { dark?: boolean }) {
   const supabase = createClient();
   const [open, setOpen] = useState(false);
@@ -41,8 +54,10 @@ export default function NotificationBell({ dark = false }: { dark?: boolean }) {
   const [loading, setLoading] = useState(false);
   const panelRef = useRef<HTMLDivElement>(null);
   const [mounted, setMounted] = useState(false);
+  const [seenIds, setSeenIds] = useState<Set<string>>(new Set());
 
   const total = conflicts.length + announcements.length;
+  const unseen = [...conflicts, ...announcements].filter(item => !seenIds.has(item.id)).length;
 
   const fetchNotifications = useCallback(async () => {
     setLoading(true);
@@ -69,11 +84,21 @@ export default function NotificationBell({ dark = false }: { dark?: boolean }) {
     setLoading(false);
   }, [supabase]);
 
-  // Fetch count on mount for badge
+  // Load seen IDs from localStorage on mount
   useEffect(() => {
     setMounted(true);
+    setSeenIds(readSeenIds());
     fetchNotifications();
   }, [fetchNotifications]);
+
+  // Mark all loaded notifications as seen whenever the panel is open
+  useEffect(() => {
+    if (!open || (conflicts.length === 0 && announcements.length === 0)) return;
+    const allIds = [...conflicts.map(c => c.id), ...announcements.map(a => a.id)];
+    const updated = new Set([...readSeenIds(), ...allIds]);
+    writeSeenIds(updated);
+    setSeenIds(updated);
+  }, [open, conflicts, announcements]);
 
   // Close on outside click
   useEffect(() => {
@@ -119,9 +144,9 @@ export default function NotificationBell({ dark = false }: { dark?: boolean }) {
         <span className="material-symbols-outlined" style={{ fontSize: "20px" }}>
           notifications
         </span>
-        {total > 0 && (
+        {unseen > 0 && (
           <span className="absolute top-1 right-1 min-w-[14px] h-[14px] bg-error text-white rounded-full text-[9px] font-mono flex items-center justify-center px-0.5 leading-none">
-            {total > 9 ? "9+" : total}
+            {unseen > 9 ? "9+" : unseen}
           </span>
         )}
       </button>

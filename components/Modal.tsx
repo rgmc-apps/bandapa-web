@@ -65,6 +65,7 @@ export default function Modal({ title, open, onClose, children }: ModalProps) {
     >
       <div
         className="bg-white rounded-2xl shadow-modal w-full max-w-lg max-h-[90vh] flex flex-col"
+        aria-labelledby="modal-title"
         style={{
           opacity: visible ? 1 : 0,
           transform: visible ? "translateY(0) scale(1)" : "translateY(12px) scale(0.95)",
@@ -75,8 +76,8 @@ export default function Modal({ title, open, onClose, children }: ModalProps) {
         }}
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-5 border-b border-outline-variant/40 shrink-0">
-          <h2 className="font-headline font-bold text-obsidian text-lg">{title}</h2>
+        <div className="flex items-center justify-between px-6 py-5 border-b border-outline-variant/40 shrink-0 min-w-0">
+          <h2 id="modal-title" className="font-headline font-bold text-obsidian text-lg truncate min-w-0 flex-1 pr-3">{title}</h2>
           <button
             onClick={onClose}
             className="w-8 h-8 rounded-lg flex items-center justify-center text-on-surface-variant hover:bg-surface-mist active:scale-[0.9] transition-all duration-150"
